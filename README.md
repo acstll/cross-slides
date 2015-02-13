@@ -1,0 +1,2 @@
+# cross-slides
+Slideshow utility
