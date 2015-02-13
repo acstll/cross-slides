@@ -4,7 +4,7 @@
 
   move(steps) sets `activeIndex` and calls
   update() which calls 
-  react(index) on each child, which calls
+  changeState(index) on each child, which calls
   _move() on itself
 
 
@@ -17,38 +17,41 @@
 
 var noop = function () {};
 
-// Sets the own state of Group and Item (active, before, after).
-var react = function (index, animate) {
+// Sets the own state of `Group` and `Item` to
+// 'before', 'previous', 'current', 'next' or 'after'.
+var changeState = function (index, animate) {
   var self = this;
   var previousState = this.state;
 
   if (this.index === index) {
-    setState('active');
+    this.state = 'current';
   }
-  if (this.index < index && previousState !== 'before') {
-    setState('before');
+  if (this.index < index) {
+    this.state = (this.index === index - 1)
+      ? 'previous'
+      : 'before';
   }
-  if (this.index > index && previousState !== 'after') {
-    setState('after');
-  }
-
-  function setState (state) {
-    self.$el.removeClass(previousState);
-    self.state = state;
-    self.$el.addClass(self.state);
+  if (this.index > index) {
+    this.state = (this.index === index + 1)
+      ? 'next'
+      : 'after';
   }
 
   if (previousState !== this.state) {
     this._move(animate);
+
+    if (typeof this.onstatechange === 'function') {
+      this.onstatechange(previousState, this.state);
+    }
   }
 };
 
-// Calls `react` on children passing `activeIndex`.
+// Calls `changeState` on children passing `activeIndex`.
 var update = function (animate) {
   var index = this.activeIndex;
 
   this.children.forEach(function (child) {
-    react.call(child, index, animate);
+    changeState.call(child, index, animate);
   });
 
   if (typeof this.onupdate === 'function') {
@@ -151,7 +154,7 @@ Slides.prototype = {
 
   shift: function (step) {},
 
-  shiftDeep: function (step) {}
+  shiftDeep: function (step) {},
 
   update: update,
 
@@ -176,7 +179,6 @@ Slides.prototype = {
 
 function Group (index, $el) {
   this.index = index;
-  this.id = $el.attr('id');
   this.$el = $el;
   this.state = '';
 
@@ -191,12 +193,13 @@ function Group (index, $el) {
 Group.prototype = {
   initialize: function () {
     var children = this.children;
-
-    this.$el.children('.item-slide').each(function (index) {
+    
+    this.$el.children().each(function (index) {
       var slide = new Item(index, $(this));
       children.push(slide);
     });
 
+    this.id = this.$el.attr('id');
     this.lastIndex = this.children.length - 1;
 
     this.load(); // TODO: do this at the right time!

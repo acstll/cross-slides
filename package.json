@@ -1,0 +1,27 @@
+{
+  "name": "cross-slides",
+  "version": "1.0.0",
+  "description": "X/Y slideshow utility",
+  "main": "index.js",
+  "scripts": {
+    "test": "tape test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/acstll/cross-slides.git"
+  },
+  "keywords": [
+    "browser",
+    "slideshow",
+    "slides"
+  ],
+  "author": "Arturo Castillo Delgado <arturo@arturu.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/acstll/cross-slides/issues"
+  },
+  "homepage": "https://github.com/acstll/cross-slides",
+  "devDependencies": {
+    "tape": "^3.5.0"
+  }
+}
