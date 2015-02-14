@@ -6,11 +6,14 @@ Slideshow utility.
 
 - [x] use a different `state` for right next and right before items
 - [x] add `onstatechange(previousState)` hook  
-- [ ] implement `shift()` and `shiftDeep()`
 - [ ] remove jQuery
+- [ ] use `options` to `Slides()` to get `children()`, `group.load()`, `selector? (String)` and `loop (Bool)` (these functions should be the only ones touching the DOM)
+- [ ] test it
+- [ ] call load Groups selectively
+- [ ] implement `shift()` and `shiftDeep()`
 - [ ] implement `moveTo(index)`
-- [ ] test all
-- [ ] load Groups selectively
+
+- allow passing "event handlers" in `options`?
 
 ### Adding methods to the Slides prototype example
 

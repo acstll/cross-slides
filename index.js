@@ -19,7 +19,7 @@ var noop = function () {};
 
 // Sets the own state of `Group` and `Item` to
 // 'before', 'previous', 'current', 'next' or 'after'.
-var changeState = function (index, animate) {
+var changeState = function (index, options) {
   var self = this;
   var previousState = this.state;
 
@@ -38,31 +38,32 @@ var changeState = function (index, animate) {
   }
 
   if (previousState !== this.state) {
-    this._move(animate);
+    this._move(options);
 
     if (typeof this.onstatechange === 'function') {
-      this.onstatechange(previousState, this.state);
+      this.onstatechange(previousState, this.state, options);
     }
   }
 };
 
 // Calls `changeState` on children passing `activeIndex`.
-var update = function (animate) {
+var update = function (options) {
   var index = this.activeIndex;
 
   this.children.forEach(function (child) {
-    changeState.call(child, index, animate);
+    changeState.call(child, index, options);
   });
 
   if (typeof this.onupdate === 'function') {
-    this.onupdate();
+    this.onupdate(options);
   }
 };
 
 // Typical next/prev function: 
 // increases/decreases `activeIndex` and calls `update`.
-var move = function (steps, callback) {
+var move = function (steps, options) {
   steps = steps || 1;
+  options = options || {};
 
   var newIndex = this.activeIndex + steps;
 
@@ -72,10 +73,10 @@ var move = function (steps, callback) {
   }
 
   this.activeIndex = newIndex;
-  this.update(true);
+  this.update(options);
 
-  if (typeof callback === 'function') {
-    callback(this.children, this.activeIndex);
+  if (typeof options.callback === 'function') {
+    options.callback(this.children, this.activeIndex);
   }
   
   return true;
@@ -120,11 +121,12 @@ Slides.prototype = {
       this.activeIndex = index;
     }
 
+    // TODO: should this be left out to be used in hooks?
     this.children.forEach(function (group) {
       group.activeIndex = 0;
     });
 
-    this.update();
+    this.update({});
 
     if (typeof this.onstart === 'function') {
       this.onstart();
