@@ -5,7 +5,6 @@ var Group = Slides.Group;
 var noop = function () {};
 
 test('`state` gets set correctly (changeState)', function (t) {
-  Group.prototype.initialize = noop;
   var group = new Group();
   var counter = 0;
 

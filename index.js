@@ -179,7 +179,6 @@ Slides.prototype = {
 
 function Group (index, $el) {
   this.index = index;
-  this.$el = $el;
   this.state = '';
 
   this.children = []; // Item instances
@@ -187,12 +186,15 @@ function Group (index, $el) {
   this.lastIndex = null;
   this.isLoaded = false;
 
-  this.initialize();
+  if ($el) {
+    this.initialize($el);
+  }
 }
 
 Group.prototype = {
-  initialize: function () {
+  initialize: function ($el) {
     var children = this.children;
+    this.$el = $el;
     
     this.$el.children().each(function (index) {
       var slide = new Item(index, $(this));
