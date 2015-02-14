@@ -145,6 +145,10 @@ Slides.prototype = {
     return this;
   },
 
+  is: function (state) {
+    return this.state === state;
+  },
+
   move: move,
 
   moveDeep: function (steps, callback) {
@@ -152,27 +156,11 @@ Slides.prototype = {
     return move.apply(item, arguments);
   },
 
-  shift: function (step) {},
+  shift: function (percentage, direction) {},
 
-  shiftDeep: function (step) {},
+  shiftDeep: function (percentage, direction) {},
 
-  update: update,
-
-  is: function (state) {
-    return this.state === state;
-  },
-
-  setActiveIndexById: function (id) {
-    if (!id) return;
-    var self = this;
-
-    this.children.some(function (group) {
-      if (group.id === id) {
-        self.activeIndex = group.index;
-        return true;
-      }
-    });
-  }
+  update: update
 };
 
 
@@ -201,10 +189,11 @@ Group.prototype = {
       children.push(slide);
     });
 
-    this.id = this.$el.attr('id');
     this.lastIndex = this.children.length - 1;
 
-    this.load(); // TODO: do this at the right time!
+    // TODO: do this at the right time!
+    // only for 'previous', 'next' and 'current' states.
+    this.load();
 
     if (typeof this.oninitialize === 'function') {
       this.oninitialize();
