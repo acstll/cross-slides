@@ -2,9 +2,23 @@ var test = require('tape');
 
 var Slides = require('../');
 var Group = Slides.Group;
+var Item = Slides.Item;
 var noop = function () {};
 
-test('`state` gets set correctly (changeState)', function (t) {
+test('isGroup() and isItem()', function (t) {
+  var item = new Item(0);
+  var group = new Group(0);
+
+  t.ok(item.isItem(), 'item is Item instance');
+  t.notOk(group.isItem(), 'group is not Item instance');
+
+  t.ok(group.isGroup(), 'group is Group instance');
+  t.notOk(item.isGroup(), 'item is not Group instance');
+
+  t.end();
+});
+
+test('`state` gets set correctly by changeState()', function (t) {
   var group = new Group();
   var counter = 0;
 

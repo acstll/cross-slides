@@ -82,6 +82,14 @@ var move = function (steps, options) {
   return true;
 };
 
+var isGroup = function () {
+  return this instanceof Group;
+};
+
+var isItem = function () {
+  return this instanceof Item;
+};
+
 
 
 function Slides ($el) {
@@ -222,7 +230,10 @@ Group.prototype = {
 
   update: update,
 
-  _move: noop
+  _move: noop,
+
+  isGroup: isGroup,
+  isItem: isItem
 };
 
 
@@ -234,7 +245,10 @@ function Item (index, $el) {
 }
 
 Item.prototype = {
-  _move: noop
+  _move: noop,
+
+  isGroup: isGroup,
+  isItem: isItem
 };
 
 
