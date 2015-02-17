@@ -1,12 +1,9 @@
 
 /*
-  Group#_move() and Item#_move() SHOULD be set.
-
   move(steps) sets `activeIndex` and calls
   update() which calls 
   changeState(index) on each child, which calls
-  _move() on itself
-
+  alter() on itself
 
   "Hooks" (events):
     #onstart()  Slides
@@ -14,8 +11,30 @@
     #oninitialize()  Slides, Group
     #onupdate()  Slides, Group
 */
+var assign = require('xtend');
 
 var noop = function () {};
+
+var childrenToArray = function childrenToArray (el) {
+  return [].slice.call(el.children, 0);
+};
+
+var load = function load (el) {
+  var img = el.querySelector('img');
+  img.src = img.getAttribute('data-src');
+};
+
+var defaults = {
+  slides: {
+    loop: false,
+    childrenToArray: childrenToArray
+  },
+  group: {
+    loop: false,
+    childrenToArray: childrenToArray,
+    load: load
+  }
+};
 
 // Sets the own state of `Group` and `Item` to
 // 'before', 'previous', 'current', 'next' or 'after'.
@@ -38,7 +57,7 @@ var changeState = function (index, options) {
   }
 
   if (previousState !== this.state) {
-    this._move(options);
+    this.alter('move', options);
 
     if (typeof this.onstatechange === 'function') {
       this.onstatechange(previousState, this.state, options);
@@ -61,9 +80,14 @@ var update = function (options) {
 
 // Typical next/prev function: 
 // increases/decreases `activeIndex` and calls `update`.
-var move = function (steps, options) {
+var move = function (steps, options, callback) {
   steps = steps || 1;
-  options = options || {};
+  callback = callback || noop;
+
+  if (arguments.length === 2 && typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
 
   var newIndex = this.activeIndex + steps;
 
@@ -74,11 +98,8 @@ var move = function (steps, options) {
 
   this.activeIndex = newIndex;
   this.update(options);
+  callback(this.children, this.activeIndex);
 
-  if (typeof options.callback === 'function') {
-    options.callback(this.children, this.activeIndex);
-  }
-  
   return true;
 };
 
@@ -92,33 +113,42 @@ var isItem = function () {
 
 
 
-function Slides ($el) {
+function Slides (el, options, alter) {
   this.state = 'closed'; // 'open' or 'closed'
   this.children = []; // Group instances
   this.activeIndex = 0;
   this.lastIndex = null;
 
-  if ($el) {
-    this.initialize($el);
+  if (arguments.length === 2) {
+    alter = options;
+    options = {};
+  }
+
+  if (typeof alter !== 'function') {
+    throw new Error('An `alter` function is mandatory.');
+  }
+
+  this.options = assign(defaults.slides, options.slides || {});
+  this.alter = alter;
+
+  this._options = options || {};
+
+  if (el !== null) {
+    this.initialize(el);
   }
 }
 
 Slides.prototype = {
-  initialize: function ($el, id) {
+  initialize: function (el) {
     var children = this.children = [];
-    this.$el = $el;
+    var options = this._options;
 
-    this.$el.children().each(function (index) {
-      var $this = $(this);
-      children.push(new Group(index, $this));
+    this.el = el;
+    this.options.childrenToArray.apply(this, [this.el]).forEach(function (element, index) {
+      children.push(new Group(index, element, options));
     });
-
     this.activeIndex = 0;
     this.lastIndex = this.children.length - 1;
-
-    if (id) {
-      this.setActiveIndexById(id);
-    }
 
     return this;
   },
@@ -128,11 +158,6 @@ Slides.prototype = {
     if (index > -1 && index < this.children.length) {
       this.activeIndex = index;
     }
-
-    // TODO: should this be left out to be used in hooks?
-    this.children.forEach(function (group) {
-      group.activeIndex = 0;
-    });
 
     this.update({});
 
@@ -161,21 +186,19 @@ Slides.prototype = {
 
   move: move,
 
-  moveDeep: function (steps, callback) {
+  moveDeep: function () {
     var item = this.children[this.activeIndex];
     return move.apply(item, arguments);
   },
-
-  shift: function (percentage, direction) {},
-
-  shiftDeep: function (percentage, direction) {},
 
   update: update
 };
 
 
 
-function Group (index, $el) {
+function Group (index, el, options) {
+  options = options || {};
+
   this.index = index;
   this.state = '';
 
@@ -184,21 +207,22 @@ function Group (index, $el) {
   this.lastIndex = null;
   this.isLoaded = false;
 
-  if ($el) {
-    this.initialize($el);
+  this.options = assign(defaults.group, options.group);
+  this.alter = options.alter;
+
+  if (el !== null) {
+    this.initialize(el);
   }
 }
 
 Group.prototype = {
-  initialize: function ($el) {
-    var children = this.children;
-    this.$el = $el;
-    
-    this.$el.children().each(function (index) {
-      var slide = new Item(index, $(this));
-      children.push(slide);
-    });
+  initialize: function (el) {
+    var children = this.children = [];
 
+    this.el = el;
+    this.options.childrenToArray.apply(this, [this.el]).forEach(function (element, index) {
+      children.push(new Item(index, element));
+    });
     this.lastIndex = this.children.length - 1;
 
     // TODO: do this at the right time!
@@ -213,24 +237,13 @@ Group.prototype = {
   },
 
   load: function () {
-    var self = this;
-
-    this.children.forEach(function (item, index) {
-      var $el = item.$el.find('img');
-
-      if (!$el.length) {
-        return;
-      }
-
-      $el.attr('src', $el.attr('data-src'));
-    });
-
+    this.children.forEach(this.options.load);
     this.isLoaded = true;
   },
 
   update: update,
 
-  _move: noop,
+  alter: noop,
 
   isGroup: isGroup,
   isItem: isItem
@@ -238,14 +251,14 @@ Group.prototype = {
 
 
 
-function Item (index, $el) {
+function Item (index, el) {
   this.index = index;
-  this.$el = $el;
+  this.el = el;
   this.state = '';
 }
 
 Item.prototype = {
-  _move: noop,
+  alter: noop,
 
   isGroup: isGroup,
   isItem: isItem
