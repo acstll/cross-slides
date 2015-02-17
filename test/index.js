@@ -41,7 +41,7 @@ test('`state` gets set correctly by changeState()', function (t) {
   var group = new Group(0, null);
   var counter = 0;
 
-  function callback(previousState) {
+  function callback(previousState, currentState, options) {
     counter++;
   }
 
@@ -84,4 +84,11 @@ test('`state` gets set correctly by changeState()', function (t) {
   t.equal(counter, 2, 'onstatechange hook gets called');
 
   t.end();
+});
+
+test('defaults.childrenToArray() should return an empty array when no `children`', function (t) {
+  t.plan(2);
+
+  t.equal(typeof Slides.defaults.slides.childrenToArray().forEach, 'function');
+  t.equal(typeof Slides.defaults.slides.childrenToArray({ children: undefined }).forEach, 'function');
 });

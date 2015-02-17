@@ -16,7 +16,10 @@ var assign = require('xtend');
 var noop = function () {};
 
 var childrenToArray = function childrenToArray (el) {
-  return [].slice.call(el.children, 0);
+  if (!el) {
+    return [];
+  }
+  return [].slice.call(el.children || [], 0);
 };
 
 var load = function load (el) {
@@ -268,5 +271,6 @@ Item.prototype = {
 
 Slides.Group = Group;
 Slides.Item = Item;
+Slides.defaults = defaults;
 
 module.exports = Slides;
