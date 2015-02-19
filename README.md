@@ -15,9 +15,8 @@ Slideshow utility.
 - [ ] test it for real (browser)
 - [ ] call load Groups selectively
 - [ ] implement `shift()` and `shiftDeep()` (maybe use the same `move` with `steps` being 1-100 to move or 0-1 to shift)
-- [ ] implement `moveTo(index)`
 - [ ] finish docs
-
+- [ ] implement `moveTo(index)`
 - allow passing "event handlers" in `options`?
 
 ## API
@@ -52,7 +51,7 @@ Slides.prototype.setActiveIndexById = function (id) {
       return true;
     }
   });
-}
+};
 ```
 
 ### Hook example
@@ -63,5 +62,5 @@ Slides.prototype.onstart = function () {
   this.children.forEach(function (group) {
     group.activeIndex = 0;
   });
-}
+};
 ```

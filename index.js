@@ -1,7 +1,7 @@
 
 /*
   move(steps) sets `activeIndex` and calls
-  update() which calls 
+  update() which calls
   changeState(index) on each child, which calls
   alter() on itself
 
@@ -23,6 +23,9 @@ var childrenToArray = function childrenToArray (el) {
 };
 
 var load = function load (el) {
+  if (!el) {
+    return;
+  }
   var img = el.querySelector('img');
   img.src = img.getAttribute('data-src');
 };
@@ -60,7 +63,7 @@ var changeState = function (index, options) {
   }
 
   if (previousState !== this.state) {
-    this.alter('move', options);
+    this.alter('move', assign({ previousState: previousState }, options));
 
     if (typeof this.onstatechange === 'function') {
       this.onstatechange(previousState, this.state, options);
@@ -81,7 +84,7 @@ var update = function (options) {
   }
 };
 
-// Typical next/prev function: 
+// Typical next/prev function:
 // increases/decreases `activeIndex` and calls `update`.
 var move = function (steps, options, callback) {
   steps = steps || 1;
@@ -94,9 +97,17 @@ var move = function (steps, options, callback) {
 
   var newIndex = this.activeIndex + steps;
 
-  // *Note* An option for choosing "loop" mode would be nice.
-  if (newIndex > this.lastIndex || newIndex < 0) {
-    return false;
+  if (!this.options.loop) {
+    if (newIndex > this.lastIndex || newIndex < 0) {
+      return false;
+    }
+  } else {
+    if (newIndex > this.lastIndex) {
+      newIndex = 0;
+    }
+    if (newIndex < 0) {
+      newIndex = this.lastIndex;
+    }
   }
 
   this.activeIndex = newIndex;
@@ -144,12 +155,14 @@ function Slides (el, options, alter) {
 Slides.prototype = {
   initialize: function (el) {
     var children = this.children = [];
-    var options = this._options;
+    var self = this;
 
     this.el = el;
-    this.options.childrenToArray.apply(this, [this.el]).forEach(function (element, index) {
-      children.push(new Group(index, element, options));
-    });
+    this.options
+      .childrenToArray.apply(this, [this.el])
+      .forEach(function (element, index) {
+        children.push(new Group(index, element, self._options.group, self.alter));
+      });
     this.activeIndex = 0;
     this.lastIndex = this.children.length - 1;
 
@@ -199,7 +212,7 @@ Slides.prototype = {
 
 
 
-function Group (index, el, options) {
+function Group (index, el, options, alter) {
   options = options || {};
 
   this.index = index;
@@ -210,8 +223,8 @@ function Group (index, el, options) {
   this.lastIndex = null;
   this.isLoaded = false;
 
-  this.options = assign(defaults.group, options.group);
-  this.alter = options.alter;
+  this.options = assign(defaults.group, options);
+  this.alter = alter;
 
   if (el !== null) {
     this.initialize(el);
