@@ -51,6 +51,9 @@ var changeState = function (index, options) {
   if (this.index === index) {
     this.state = 'current';
   }
+
+  // TODO: mind options.loop to make first or last "previous" or "next",
+  // which makes loop mode work properly.
   if (this.index < index) {
     this.state = (this.index === index - 1)
       ? 'previous'
@@ -236,14 +239,17 @@ Group.prototype = {
     var children = this.children = [];
 
     this.el = el;
-    this.options.childrenToArray.apply(this, [this.el]).forEach(function (element, index) {
-      children.push(new Item(index, element));
-    });
-    this.lastIndex = this.children.length - 1;
 
-    // TODO: do this at the right time!
-    // only for 'previous', 'next' and 'current' states.
-    this.load();
+    if (this.options) {
+      this.options.childrenToArray.apply(this, [this.el]).forEach(function (element, index) {
+        children.push(new Item(index, element));
+      });
+      this.lastIndex = this.children.length - 1;
+
+      // TODO: do this at the right time!
+      // only for 'previous', 'next' and 'current' states.
+      this.load();
+    }
 
     if (typeof this.oninitialize === 'function') {
       this.oninitialize();

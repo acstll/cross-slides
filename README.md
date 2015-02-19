@@ -11,7 +11,9 @@ Slideshow utility.
 - [x] remove jQuery
 - [x] implement internal `children()` and `load()`
 - [x] use `options` to `Slides()` to get `children()`, `group.load()`, and `loop (Bool)` (these functions should be the only ones touching the DOM)
-- [ ] implement looping mode on `move()`
+- [x] implement looping mode on `move()`
+- [ ] implement looping mode on `changeState()`
+- [ ] test options.group = false
 - [ ] test it for real (browser)
 - [ ] call load Groups selectively
 - [ ] implement `shift()` and `shiftDeep()` (maybe use the same `move` with `steps` being 1-100 to move or 0-1 to shift)

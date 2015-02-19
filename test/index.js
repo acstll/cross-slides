@@ -14,7 +14,7 @@ test('new Slides()', function (t) {
 
   t.notEqual(options, slides.options, '`options` passed is not mutable');
   t.equal(slides.options.a, 1, '`options` is correct');
-  
+
   t.throws(function () {
     return new Slides(null);
   }, 'not passing an `alter` function with 1 arg throws');
@@ -52,11 +52,11 @@ test('`state` gets set correctly by changeState()', function (t) {
     { index: 3, alter: noop, onstatechange: noop },
     { index: 4, alter: noop, onstatechange: noop },
     { index: 5, alter: noop, onstatechange: noop },
-    { index: 6, alter: noop, onstatechange: callback }  
+    { index: 6, alter: noop, onstatechange: callback }
   ];
 
   group.activeIndex = 3;
-  group.update(); 
+  group.update();
 
   t.equal(group.children[0].state, 'before');
   t.equal(group.children[1].state, 'before');
@@ -67,7 +67,7 @@ test('`state` gets set correctly by changeState()', function (t) {
   t.equal(group.children[6].state, 'after');
 
   group.activeIndex = 0;
-  group.update(); 
+  group.update();
 
   t.equal(group.children[0].state, 'current');
   t.equal(group.children[1].state, 'next');
@@ -84,6 +84,13 @@ test('`state` gets set correctly by changeState()', function (t) {
   t.equal(counter, 2, 'onstatechange hook gets called');
 
   t.end();
+});
+
+test('passing options.group = false omits Items', function (t) {
+  t.plan(1);
+
+  // TODO
+  t.ok(true);
 });
 
 test('defaults.childrenToArray() should return an empty array when no `children`', function (t) {
