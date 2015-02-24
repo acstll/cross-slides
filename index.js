@@ -10,6 +10,7 @@
     #onstop()  Slides
     #oninitialize()  Slides, Group
     #onupdate()  Slides, Group
+    #onstatechange() Slides, Group, Item
 */
 var assign = require('xtend');
 
@@ -22,11 +23,12 @@ var childrenToArray = function childrenToArray (el) {
   return [].slice.call(el.children || [], 0);
 };
 
-var load = function load (el) {
-  if (!el) {
+var load = function load (instance) {
+  if (!instance.el) {
     return;
   }
-  var img = el.querySelector('img');
+
+  var img = instance.el.querySelector('img');
   img.src = img.getAttribute('data-src');
 };
 
@@ -237,12 +239,13 @@ function Group (index, el, options, alter) {
 Group.prototype = {
   initialize: function (el) {
     var children = this.children = [];
+    var self = this;
 
     this.el = el;
 
     if (this.options) {
       this.options.childrenToArray.apply(this, [this.el]).forEach(function (element, index) {
-        children.push(new Item(index, element));
+        children.push(new Item(index, element, self.alter));
       });
       this.lastIndex = this.children.length - 1;
 
@@ -265,23 +268,20 @@ Group.prototype = {
 
   update: update,
 
-  alter: noop,
-
   isGroup: isGroup,
   isItem: isItem
 };
 
 
 
-function Item (index, el) {
+function Item (index, el, alter) {
   this.index = index;
   this.el = el;
   this.state = '';
+  this.alter = alter;
 }
 
 Item.prototype = {
-  alter: noop,
-
   isGroup: isGroup,
   isItem: isItem
 };
