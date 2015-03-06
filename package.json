@@ -4,7 +4,8 @@
   "description": "X/Y slideshow utility",
   "main": "index.js",
   "scripts": {
-    "test": "tape test/*.js | faucet"
+    "test": "tape test/*.js | faucet",
+    "babel": "babel ./index-es6.js > ./index.js"
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
   },
   "homepage": "https://github.com/acstll/cross-slides",
   "devDependencies": {
+    "babel": "^4.7.1",
     "faucet": "0.0.1",
     "tape": "^3.5.0"
   },

@@ -1,32 +1,33 @@
 var test = require('tape');
 
-var Slides = require('../');
-var Group = Slides.Group;
-var Item = Slides.Item;
+var createSlides = require('../');
+var Slides = createSlides.Slides;
+var Group = createSlides.Group;
+var Item = createSlides.Item;
 var noop = function () {};
 
 
-test('new Slides()', function (t) {
+test('createSlides()', function (t) {
   t.plan(4);
 
   var options = { slides: { a: 1 }};
-  var slides = new Slides(null, options, noop);
+  var slides = createSlides(null, options, noop);
 
   t.notEqual(options, slides.options, '`options` passed is not mutable');
   t.equal(slides.options.a, 1, '`options` is correct');
 
   t.throws(function () {
-    return new Slides(null);
+    return createSlides(null);
   }, 'not passing an `alter` function with 1 arg throws');
 
   t.throws(function () {
-    return new Slides(null, options);
+    return createSlides(null, options);
   }, 'not passing an `alter` function with 2 args throws');
 });
 
 test('isGroup() and isItem()', function (t) {
-  var item = new Item(0);
-  var group = new Group(0, null);
+  var item = Object.create(Item).init(0);
+  var group = Object.create(Group).init(0, null);
 
   t.ok(item.isItem(), 'item is Item instance');
   t.notOk(group.isItem(), 'group is not Item instance');
@@ -38,7 +39,7 @@ test('isGroup() and isItem()', function (t) {
 });
 
 test('`state` gets set correctly by changeState()', function (t) {
-  var group = new Group(0, null);
+  var group = Object.create(Group).init(0, null);
   var counter = 0;
 
   function callback(previousState, currentState, options) {
@@ -93,9 +94,9 @@ test('passing options.group = false omits Items', function (t) {
   t.ok(true);
 });
 
-test('defaults.childrenToArray() should return an empty array when no `children`', function (t) {
+test('childrenToArray() should return an empty array when no `children`', function (t) {
   t.plan(2);
 
-  t.equal(typeof Slides.defaults.slides.childrenToArray().forEach, 'function');
-  t.equal(typeof Slides.defaults.slides.childrenToArray({ children: undefined }).forEach, 'function');
+  t.equal(typeof Slides.childrenToArray().forEach, 'function');
+  t.equal(typeof Slides.childrenToArray({ children: undefined }).forEach, 'function');
 });

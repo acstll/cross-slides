@@ -1,12 +1,9 @@
-"use strict";
 
-var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
+import assign from 'xtend';
 
-var assign = _interopRequire(require("xtend"));
+const noop = function () {};
 
-var noop = function noop() {};
-
-var childrenToArray = function childrenToArray(el) {
+const childrenToArray = function childrenToArray (el) {
   if (!el) {
     return [];
   }
@@ -14,14 +11,14 @@ var childrenToArray = function childrenToArray(el) {
   return [].slice.call(el.children || [], 0);
 };
 
-var load = function load(children) {
+const load = function load (children) {
   children.forEach(function (child) {
     if (!child.el) {
       return;
     }
 
-    var img = child.el.querySelector("img");
-    img.src = img.getAttribute("data-src");
+    let img = child.el.querySelector('img');
+    img.src = img.getAttribute('data-src');
   });
 };
 
@@ -36,57 +33,57 @@ var defaults = {
 
 // Sets the own state of `Group` and `Item` to
 // 'before', 'previous', 'current', 'next' or 'after'.
-var changeState = function changeState(index, options) {
-  var previousState = this.state;
+const changeState = function changeState (index, options) {
+  let previousState = this.state;
 
   if (this.index === index) {
-    this.state = "current";
+    this.state = 'current';
   }
 
   // TODO: mind options.loop to make first or last "previous" or "next",
   // which makes loop mode work properly.
   if (this.index < index) {
-    this.state = this.index === index - 1 ? "previous" : "before";
+    this.state = (this.index === index - 1)
+      ? 'previous'
+      : 'before';
   }
   if (this.index > index) {
-    this.state = this.index === index + 1 ? "next" : "after";
+    this.state = (this.index === index + 1)
+      ? 'next'
+      : 'after';
   }
 
   if (previousState !== this.state) {
-    this.alter("move", assign({ previousState: previousState }, options));
+    this.alter('move', assign({ previousState: previousState }, options));
 
-    if (typeof this.onstatechange === "function") {
+    if (typeof this.onstatechange === 'function') {
       this.onstatechange(previousState, this.state, options);
     }
   }
 };
 
 // Calls `changeState` on children passing `activeIndex`.
-var update = function update(options) {
-  var index = this.activeIndex;
+const update = function update (options) {
+  let index = this.activeIndex;
 
   this.children.forEach(function (child) {
     changeState.call(child, index, options);
   });
 
-  if (typeof this.onupdate === "function") {
+  if (typeof this.onupdate === 'function') {
     this.onupdate(options);
   }
 };
 
 // Typical next/prev function:
 // increases/decreases `activeIndex` and calls `update`.
-var move = function move() {
-  var steps = arguments[0] === undefined ? 1 : arguments[0];
-  var options = arguments[1] === undefined ? {} : arguments[1];
-  var callback = arguments[2] === undefined ? noop : arguments[2];
-
-  if (arguments.length === 2 && typeof options === "function") {
+const move = function move (steps=1, options={}, callback=noop) {
+  if (arguments.length === 2 && typeof options === 'function') {
     callback = options;
     options = {};
   }
 
-  var newIndex = this.activeIndex + steps;
+  let newIndex = this.activeIndex + steps;
 
   if (!this.options.loop) {
     if (newIndex > this.lastIndex || newIndex < 0) {
@@ -108,41 +105,42 @@ var move = function move() {
   return true;
 };
 
-var isGroup = function isGroup() {
+const isGroup = function isGroup () {
   return Group.isPrototypeOf(this);
 };
 
-var isItem = function isItem() {
+const isItem = function isItem () {
   return Item.isPrototypeOf(this);
 };
 
+
+
 var Item = {
-  init: function init(index, el) {
+  init (index, el) {
     this.index = index;
     this.el = el;
-    this.state = "";
+    this.state = '';
 
     return this;
   },
 
-  isGroup: isGroup,
-
-  isItem: isItem
+  isGroup,
+  
+  isItem
 };
 
 var Group = {
-  init: function init(index) {
-    var el = arguments[1] === undefined ? null : arguments[1];
-    var options = arguments[2] === undefined ? {} : arguments[2];
-
+  init (index, el=null, options={}) {
     this.index = index;
-    this.state = "";
+    this.state = '';
 
     this.children = []; // Item instances
     this.activeIndex = 0;
     this.lastIndex = null;
 
-    this.options = options === false ? options : assign(defaults.group, options);
+    this.options = options === false
+      ? options
+      : assign(defaults.group, options);
 
     if (el !== null) {
       this.initialize(el);
@@ -151,13 +149,13 @@ var Group = {
     return this;
   },
 
-  reset: function reset(el) {
-    var children = this.children = [];
+  reset (el) {
+    let children = this.children = [];
     this.el = el;
 
     if (this.options !== false) {
       this.childrenToArray(this.el).forEach(function (element, index) {
-        var item = Object.create(Item).init(index, element);
+        let item = Object.create(Item).init(index, element);
         children.push(item);
       });
       this.lastIndex = this.children.length - 1;
@@ -167,30 +165,27 @@ var Group = {
       this.load(this.children);
     }
 
-    if (typeof this.oninitialize === "function") {
+    if (typeof this.oninitialize === 'function') {
       this.oninitialize();
     }
 
     this.update();
   },
 
-  update: update,
+  update,
+  
+  childrenToArray,
+  
+  load,
 
-  childrenToArray: childrenToArray,
-
-  load: load,
-
-  isGroup: isGroup,
-
-  isItem: isItem
+  isGroup,
+  
+  isItem
 };
 
 var Slides = {
-  init: function init() {
-    var el = arguments[0] === undefined ? null : arguments[0];
-    var options = arguments[1] === undefined ? {} : arguments[1];
-
-    this.state = "closed"; // 'open' or 'closed'
+  init (el=null, options={}) {
+    this.state = 'closed'; // 'open' or 'closed'
     this.children = []; // Group instances
     this.activeIndex = 0;
     this.lastIndex = null;
@@ -205,13 +200,13 @@ var Slides = {
     return this;
   },
 
-  reset: function reset(el) {
-    var children = this.children = [];
-    var options = this._options.group;
+  reset (el) {
+    let children = this.children = [];
+    let options = this._options.group;
 
     this.el = el;
     this.childrenToArray(this.el).forEach(function (element, index) {
-      var group = Object.create(Group).init(index, element, options);
+      let group = Object.create(Group).init(index, element, options);
       children.push(group);
     });
     this.activeIndex = 0;
@@ -220,56 +215,58 @@ var Slides = {
     return this;
   },
 
-  start: function start(index) {
+  start (index) {
     if (index > -1 && index < this.children.length) {
       this.activeIndex = index;
     }
 
     this.update({});
 
-    if (typeof this.onstart === "function") {
+    if (typeof this.onstart === 'function') {
       this.onstart();
     }
 
-    this.state = "open";
+    this.state = 'open';
 
     return this;
   },
 
-  stop: function stop() {
-    if (typeof this.onstop === "function") {
+  stop () {
+    if (typeof this.onstop === 'function') {
       this.onstop();
     }
 
-    this.state = "closed";
+    this.state = 'closed';
 
     return this;
   },
 
-  is: function is(state) {
+  is (state) {
     return this.state === state;
   },
 
-  move: move,
+  move,
 
-  moveDeep: function moveDeep() {
-    var group = this.children[this.activeIndex];
+  moveDeep () {
+    let group = this.children[this.activeIndex];
     return move.apply(group, arguments);
   },
 
-  update: update,
+  update,
 
-  childrenToArray: childrenToArray
+  childrenToArray
 };
 
-var create = function create(el, options, alter) {
-  if (arguments.length === 2 && typeof options === "function") {
+
+
+const create = function (el, options, alter) {
+  if (arguments.length === 2 && typeof options === 'function') {
     alter = options;
     options = {};
   }
 
-  if (typeof alter !== "function") {
-    throw new Error("An `alter` function as second or third parameter is mandatory.");
+  if (typeof alter !== 'function') {
+    throw new Error('An `alter` function as second or third parameter is mandatory.');
   }
 
   Group.alter = Item.alter = alter;
@@ -282,4 +279,3 @@ create.Item = Item;
 create.defaults = defaults;
 
 module.exports = create;
-
