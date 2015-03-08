@@ -1,11 +1,12 @@
 {
   "name": "cross-slides",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "X/Y slideshow utility",
   "main": "index.js",
   "scripts": {
-    "test": "tape test/*.js | faucet",
-    "babel": "babel ./index-es6.js > ./index.js"
+    "test": "tape test/*.js",
+    "babel": "babel ./index-es6.js > ./index.js",
+    "postbabel": "tape test/*.js"
   },
   "repository": {
     "type": "git",
@@ -28,6 +29,7 @@
     "tape": "^3.5.0"
   },
   "dependencies": {
+    "eventemitter3": "^0.1.6",
     "xtend": "^4.0.0"
   }
 }

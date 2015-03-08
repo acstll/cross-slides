@@ -2,7 +2,25 @@
 
 var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
 
-var assign = _interopRequire(require("xtend"));
+var extend = _interopRequire(require("xtend"));
+
+var assign = _interopRequire(require("xtend/mutable"));
+
+var EventEmitter = require("eventemitter3").EventEmitter;
+
+/*
+  Events:
+  - 'start' (slides)
+  - 'stop' (slides)
+  - 'reset' (slides)
+  - 'update' (slides, options)
+  
+  - 'reset group' (group)
+  - 'update group' (group, options)
+  - 'change group' (group, previousState, options)
+  
+  - 'change item' (item, previousState, options)
+*/
 
 var noop = function noop() {};
 
@@ -14,16 +32,7 @@ var childrenToArray = function childrenToArray(el) {
   return [].slice.call(el.children || [], 0);
 };
 
-var load = function load(children) {
-  children.forEach(function (child) {
-    if (!child.el) {
-      return;
-    }
-
-    var img = child.el.querySelector("img");
-    img.src = img.getAttribute("data-src");
-  });
-};
+var load = function load(children) {};
 
 var defaults = {
   slides: {
@@ -38,6 +47,7 @@ var defaults = {
 // 'before', 'previous', 'current', 'next' or 'after'.
 var changeState = function changeState(index, options) {
   var previousState = this.state;
+  var event = "change " + this.type;
 
   if (this.index === index) {
     this.state = "current";
@@ -53,25 +63,21 @@ var changeState = function changeState(index, options) {
   }
 
   if (previousState !== this.state) {
-    this.alter("move", assign({ previousState: previousState }, options));
-
-    if (typeof this.onstatechange === "function") {
-      this.onstatechange(previousState, this.state, options);
-    }
+    this.alter("move", extend({ previousState: previousState }, options));
+    this.emit(event, this, previousState, options);
   }
 };
 
 // Calls `changeState` on children passing `activeIndex`.
 var update = function update(options) {
   var index = this.activeIndex;
+  var event = this.type ? "update " + this.type : "update";
 
   this.children.forEach(function (child) {
     changeState.call(child, index, options);
   });
 
-  if (typeof this.onupdate === "function") {
-    this.onupdate(options);
-  }
+  this.emit(event, this, options);
 };
 
 // Typical next/prev function:
@@ -108,44 +114,39 @@ var move = function move() {
   return true;
 };
 
-var isGroup = function isGroup() {
-  return Group.isPrototypeOf(this);
-};
-
-var isItem = function isItem() {
-  return Item.isPrototypeOf(this);
-};
-
 var Item = {
   init: function init(index, el) {
+    var emit = arguments[2] === undefined ? noop : arguments[2];
+
     this.index = index;
     this.el = el;
     this.state = "";
+    this.emit = emit;
+    this.type = "item";
 
     return this;
-  },
-
-  isGroup: isGroup,
-
-  isItem: isItem
+  }
 };
 
 var Group = {
   init: function init(index) {
     var el = arguments[1] === undefined ? null : arguments[1];
     var options = arguments[2] === undefined ? {} : arguments[2];
+    var emit = arguments[3] === undefined ? noop : arguments[3];
 
     this.index = index;
     this.state = "";
+    this.emit = emit;
+    this.type = "group";
 
     this.children = []; // Item instances
     this.activeIndex = 0;
     this.lastIndex = null;
 
-    this.options = options === false ? options : assign(defaults.group, options);
+    this.options = options === false ? options : extend(defaults.group, options);
 
     if (el !== null) {
-      this.initialize(el);
+      this.reset(el);
     }
 
     return this;
@@ -153,24 +154,20 @@ var Group = {
 
   reset: function reset(el) {
     var children = this.children = [];
+    var emit = this.emit;
     this.el = el;
 
     if (this.options !== false) {
       this.childrenToArray(this.el).forEach(function (element, index) {
-        var item = Object.create(Item).init(index, element);
+        var item = Object.create(Item).init(index, element, emit);
         children.push(item);
       });
       this.lastIndex = this.children.length - 1;
 
-      // TODO: do this at the right time!
-      // only for 'previous', 'next' and 'current' states.
       this.load(this.children);
     }
 
-    if (typeof this.oninitialize === "function") {
-      this.oninitialize();
-    }
-
+    this.emit("reset group", this);
     this.update();
   },
 
@@ -178,11 +175,7 @@ var Group = {
 
   childrenToArray: childrenToArray,
 
-  load: load,
-
-  isGroup: isGroup,
-
-  isItem: isItem
+  load: load
 };
 
 var Slides = {
@@ -195,11 +188,13 @@ var Slides = {
     this.activeIndex = 0;
     this.lastIndex = null;
 
-    this.options = assign(defaults.slides, options.slides || {});
+    assign(this, EventEmitter.prototype);
+
+    this.options = extend(defaults.slides, options.slides || {});
     this._options = options;
 
     if (el !== null) {
-      this.initialize(el);
+      this.reset(el);
     }
 
     return this;
@@ -208,14 +203,17 @@ var Slides = {
   reset: function reset(el) {
     var children = this.children = [];
     var options = this._options.group;
+    var emit = this.emit.bind(this);
 
     this.el = el;
     this.childrenToArray(this.el).forEach(function (element, index) {
-      var group = Object.create(Group).init(index, element, options);
+      var group = Object.create(Group).init(index, element, options, emit);
       children.push(group);
     });
     this.activeIndex = 0;
     this.lastIndex = this.children.length - 1;
+
+    this.emit("reset", this);
 
     return this;
   },
@@ -226,21 +224,14 @@ var Slides = {
     }
 
     this.update({});
-
-    if (typeof this.onstart === "function") {
-      this.onstart();
-    }
-
+    this.emit("start", this);
     this.state = "open";
 
     return this;
   },
 
   stop: function stop() {
-    if (typeof this.onstop === "function") {
-      this.onstop();
-    }
-
+    this.emit("stop", this);
     this.state = "closed";
 
     return this;
@@ -253,8 +244,8 @@ var Slides = {
   move: move,
 
   moveDeep: function moveDeep() {
-    var group = this.children[this.activeIndex];
-    return move.apply(group, arguments);
+    var activeGroup = this.children[this.activeIndex];
+    return move.apply(activeGroup, arguments);
   },
 
   update: update,

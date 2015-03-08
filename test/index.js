@@ -25,35 +25,17 @@ test('createSlides()', function (t) {
   }, 'not passing an `alter` function with 2 args throws');
 });
 
-test('isGroup() and isItem()', function (t) {
-  var item = Object.create(Item).init(0);
-  var group = Object.create(Group).init(0, null);
-
-  t.ok(item.isItem(), 'item is Item instance');
-  t.notOk(group.isItem(), 'group is not Item instance');
-
-  t.ok(group.isGroup(), 'group is Group instance');
-  t.notOk(item.isGroup(), 'item is not Group instance');
-
-  t.end();
-});
-
 test('`state` gets set correctly by changeState()', function (t) {
   var group = Object.create(Group).init(0, null);
-  var counter = 0;
-
-  function callback(previousState, currentState, options) {
-    counter++;
-  }
 
   group.children = [
-    { index: 0, alter: noop, onstatechange: noop },
-    { index: 1, alter: noop, onstatechange: noop },
-    { index: 2, alter: noop, onstatechange: noop },
-    { index: 3, alter: noop, onstatechange: noop },
-    { index: 4, alter: noop, onstatechange: noop },
-    { index: 5, alter: noop, onstatechange: noop },
-    { index: 6, alter: noop, onstatechange: callback }
+    { index: 0, alter: noop, emit: noop },
+    { index: 1, alter: noop, emit: noop },
+    { index: 2, alter: noop, emit: noop },
+    { index: 3, alter: noop, emit: noop },
+    { index: 4, alter: noop, emit: noop },
+    { index: 5, alter: noop, emit: noop },
+    { index: 6, alter: noop, emit: noop }
   ];
 
   group.activeIndex = 3;
@@ -82,8 +64,6 @@ test('`state` gets set correctly by changeState()', function (t) {
   t.equal(group.children[5].state, 'previous');
   t.equal(group.children[6].state, 'current');
 
-  t.equal(counter, 2, 'onstatechange hook gets called');
-
   t.end();
 });
 
@@ -91,7 +71,62 @@ test('passing options.group = false omits Items', function (t) {
   t.plan(1);
 
   // TODO
-  t.ok(true);
+  t.ok(true, 'nothing tested');
+});
+
+test('EventEmitter', function (t) {
+  t.plan(3);
+
+  var el = {
+    children: [
+      {
+        el: {
+          children: [
+            {
+              el: {}
+            },
+            {
+              el: {}
+            }
+          ]
+        }
+      },
+      {
+        el: {
+          children: [
+            {
+              el: {}
+            },
+            {
+              el: {}
+            }
+          ]
+        }
+      }
+    ]
+  };
+
+  var slides = createSlides(el, noop);
+
+  slides.on('test', function (value) {
+    t.equal(value, 1, 'emits events')
+  });
+
+  slides.emit('test', 1);
+
+  // 2 times
+  slides.on('change group', function (group, previousState, options) {
+    t.ok(group, 'group state change triggered');
+  });
+
+  slides.move();
+
+  // 2 times
+  // slides.on('item change', function (item, previousState, options) {
+  //   t.ok(item, 'item state change triggered');
+  // });
+
+  // slides.moveDeep();
 });
 
 test('childrenToArray() should return an empty array when no `children`', function (t) {

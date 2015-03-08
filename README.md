@@ -12,18 +12,18 @@ Slideshow utility.
 - [x] implement internal `children()` and `load()`
 - [x] use `options` to `Slides()` to get `children()`, `group.load()`, and `loop (Bool)` (these functions should be the only ones touching the DOM)
 - [x] implement looping mode on `move()`
+- [x] use events instead of "hooks" WIP
 - [ ] implement looping mode on `changeState()`
-- [ ] test options.group = false
 - [ ] test it for real (browser)
-- [ ] call load Groups selectively
+- [ ] test options.group = false
+- [x] call Groups.load selectively? (user)
 - [ ] implement `shift()` and `shiftDeep()` (maybe use the same `move` with `steps` being 1-100 to move or 0-1 to shift)
-- [ ] finish docs
 - [ ] implement `moveTo(index)`
-- allow passing "event handlers" in `options`?
+- [ ] finish docs
 
 ## API
 
-### new Slides(el, [options,] alter);
+### createSlides(el, [options,] alter);
 
 #### #move(steps[, options, callback]);
 #### #moveDeep(steps[, options, callback]);
@@ -31,19 +31,14 @@ Slideshow utility.
 #### #stop()
 #### #is(state)
 
-## Hooks (events)
-
-- \#onstart() `Slides`
-- \#onstop() `Slides`
-- \#oninitialize() `Slides`, `Slides.Group`
-- \#onupdate() `Slides`, `Slides.Group`
-
 ## Examples
 
-### Adding methods to the Slides prototype example
+### Adding methods to the Slides "prototype" example
 
 ```js
-Slides.prototype.setActiveIndexById = function (id) {
+var Slides = require('cross-slides').Slides;
+
+Slides.setActiveIndexById = function (id) {
   if (!id) return;
   var self = this;
 
@@ -56,12 +51,14 @@ Slides.prototype.setActiveIndexById = function (id) {
 };
 ```
 
-### Hook example
+### Event handler example
 
 ```js
 // Reset all groups to the first position on start.
-Slides.prototype.onstart = function () {
-  this.children.forEach(function (group) {
+var slides = createSlides(el);
+
+slides.on('start', function () {
+  slides.children.forEach(function (group) {
     group.activeIndex = 0;
   });
 };
