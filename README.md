@@ -37,11 +37,9 @@ Slideshow utility.
 - `stop` (slides)
 - `reset` (slides)
 - `update` (slides, options)
-
 - `reset group` (group)
 - `update group` (group, options)
 - `change group` (group, previousState, options)
-
 - `change item` (item, previousState, options)
 
 ## Examples
