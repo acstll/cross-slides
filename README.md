@@ -31,6 +31,19 @@ Slideshow utility.
 #### #stop()
 #### #is(state)
 
+### Events
+
+- `start` (slides)
+- `stop` (slides)
+- `reset` (slides)
+- `update` (slides, options)
+
+- `reset group` (group)
+- `update group` (group, options)
+- `change group` (group, previousState, options)
+
+- `change item` (item, previousState, options)
+
 ## Examples
 
 ### Adding methods to the Slides "prototype" example
@@ -43,7 +56,7 @@ Slides.setActiveIndexById = function (id) {
   var self = this;
 
   this.children.some(function (group) {
-    if (group.id === id) {
+    if (group.id === id) { // check 'reset group' example below
       self.activeIndex = group.index;
       return true;
     }
@@ -54,12 +67,18 @@ Slides.setActiveIndexById = function (id) {
 ### Event handler example
 
 ```js
-// Reset all groups to the first position on start.
 var slides = createSlides(el);
 
+// Reset all groups to the first position on start.
 slides.on('start', function () {
   slides.children.forEach(function (group) {
     group.activeIndex = 0;
   });
 };
+
+// Add an `id` property to every group instance 
+// based on its DOM element `id` attribute
+slides.on('reset group', function (group) {
+  group.id = group.el.getAttribute('id');
+});
 ```
