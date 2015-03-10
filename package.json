@@ -1,6 +1,6 @@
 {
   "name": "cross-slides",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "X/Y slideshow utility",
   "main": "index.js",
   "scripts": {
