@@ -40,7 +40,8 @@ var defaults = {
 
 // Sets the own state of `Group` and `Item` to
 // 'before', 'previous', 'current', 'next' or 'after'.
-const changeState = function changeState (index, options) {
+const changeState = function changeState () {
+  let { index, total, _options, options } = arguments[0];
   let previousState = this.state;
   let event = `change ${this.type}`;
 
@@ -48,8 +49,6 @@ const changeState = function changeState (index, options) {
     this.state = 'current';
   }
 
-  // TODO: mind options.loop to make first or last "previous" or "next",
-  // which makes loop mode work properly.
   if (this.index < index) {
     this.state = (this.index === index - 1)
       ? 'previous'
@@ -61,6 +60,18 @@ const changeState = function changeState (index, options) {
       : 'after';
   }
 
+  // Loop mode corrections.
+  if (_options.loop === true) {
+    // If last item is 'current' and we're first.
+    if (this.index === 0 && (index + 1 === total)) {
+      this.state = 'next';
+    }
+    // If first item is 'current' and we're last.
+    if ((this.index + 1 === total) && index === 0) {
+      this.state = 'previous';
+    }
+  }
+
   if (previousState !== this.state) {
     this.alter('move', extend({ previousState: previousState }, options));
     this.emit(event, this, previousState, options);
@@ -70,10 +81,12 @@ const changeState = function changeState (index, options) {
 // Calls `changeState` on children passing `activeIndex`.
 const update = function update (options) {
   let index = this.activeIndex;
+  let total = this.children.length;
+  let _options = this.options || {}; // internal
   let event = this.type ? `update ${this.type}` : 'update';
 
   this.children.forEach(function (child) {
-    changeState.call(child, index, options);
+    changeState.call(child, { index, total, _options, options });
   });
 
   this.emit(event, this, options);
