@@ -4,9 +4,10 @@
   "description": "X/Y slideshow utility",
   "main": "index.js",
   "scripts": {
-    "test": "tape test/*.js",
+    "test": "tape test/index.js",
     "babel": "babel ./index-es6.js > ./index.js",
-    "postbabel": "tape test/*.js"
+    "postbabel": "tape test/index.js",
+    "beef": "beefy test/browser.js --index=./test/index.html --open"
   },
   "repository": {
     "type": "git",
@@ -25,8 +26,10 @@
   "homepage": "https://github.com/acstll/cross-slides",
   "devDependencies": {
     "babel": "^4.7.1",
+    "beefy": "^2.1.3",
     "faucet": "0.0.1",
-    "tape": "^3.5.0"
+    "tape": "^3.5.0",
+    "watchify": "^2.4.0"
   },
   "dependencies": {
     "eventemitter3": "^0.1.6",
