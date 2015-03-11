@@ -22,17 +22,23 @@ var EventEmitter = require("eventemitter3").EventEmitter;
   - 'change item' (item, previousState, options)
 */
 
+// States.
+var BEFORE = "before";
+var PREVIOUS = "previous";
+var CURRENT = "current";
+var NEXT = "next";
+var AFTER = "after";
+
+var OPEN = "open";
+var CLOSED = "closed";
+
 var noop = function noop() {};
 
-var childrenToArray = function childrenToArray(el) {
-  if (!el) {
-    return [];
-  }
+var childrenToArray = function childrenToArray() {
+  var el = arguments[0] === undefined ? {} : arguments[0];
 
   return [].slice.call(el.children || [], 0);
 };
-
-var load = function load(children) {};
 
 var defaults = {
   slides: {
@@ -56,25 +62,25 @@ var changeState = function changeState() {
   var event = "change " + this.type;
 
   if (this.index === index) {
-    this.state = "current";
+    this.state = CURRENT;
   }
 
   if (this.index < index) {
-    this.state = this.index === index - 1 ? "previous" : "before";
+    this.state = this.index === index - 1 ? PREVIOUS : BEFORE;
   }
   if (this.index > index) {
-    this.state = this.index === index + 1 ? "next" : "after";
+    this.state = this.index === index + 1 ? NEXT : AFTER;
   }
 
   // Loop mode corrections.
   if (_options.loop === true) {
     // If last item is 'current' and we're first.
     if (this.index === 0 && index + 1 === total) {
-      this.state = "next";
+      this.state = NEXT;
     }
     // If first item is 'current' and we're last.
     if (this.index + 1 === total && index === 0) {
-      this.state = "previous";
+      this.state = PREVIOUS;
     }
   }
 
@@ -193,7 +199,7 @@ var Group = {
 
   childrenToArray: childrenToArray,
 
-  load: load
+  load: noop
 };
 
 var Slides = {
@@ -201,7 +207,7 @@ var Slides = {
     var el = arguments[0] === undefined ? null : arguments[0];
     var options = arguments[1] === undefined ? {} : arguments[1];
 
-    this.state = "closed"; // 'open' or 'closed'
+    this.state = CLOSED; // 'open' or 'closed'
     this.children = []; // Group instances
     this.activeIndex = 0;
     this.lastIndex = null;
@@ -243,14 +249,14 @@ var Slides = {
 
     this.update({});
     this.emit("start", this);
-    this.state = "open";
+    this.state = OPEN;
 
     return this;
   },
 
   stop: function stop() {
     this.emit("stop", this);
-    this.state = "closed";
+    this.state = CLOSED;
 
     return this;
   },

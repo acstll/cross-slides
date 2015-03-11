@@ -17,17 +17,22 @@ import { EventEmitter } from 'eventemitter3';
   - 'change item' (item, previousState, options)
 */
 
+// States.
+const BEFORE = 'before';
+const PREVIOUS = 'previous';
+const CURRENT = 'current';
+const NEXT = 'next';
+const AFTER = 'after';
+
+const OPEN = 'open';
+const CLOSED = 'closed';
+
 const noop = function () {};
 
-var childrenToArray = function childrenToArray (el) {
-  if (!el) {
-    return [];
-  }
 
+var childrenToArray = function childrenToArray (el={}) {
   return [].slice.call(el.children || [], 0);
 };
-
-var load = function load (children) {};
 
 var defaults = {
   slides: {
@@ -46,29 +51,29 @@ const changeState = function changeState () {
   let event = `change ${this.type}`;
 
   if (this.index === index) {
-    this.state = 'current';
+    this.state = CURRENT;
   }
 
   if (this.index < index) {
     this.state = (this.index === index - 1)
-      ? 'previous'
-      : 'before';
+      ? PREVIOUS
+      : BEFORE;
   }
   if (this.index > index) {
     this.state = (this.index === index + 1)
-      ? 'next'
-      : 'after';
+      ? NEXT
+      : AFTER;
   }
 
   // Loop mode corrections.
   if (_options.loop === true) {
     // If last item is 'current' and we're first.
     if (this.index === 0 && (index + 1 === total)) {
-      this.state = 'next';
+      this.state = NEXT;
     }
     // If first item is 'current' and we're last.
     if ((this.index + 1 === total) && index === 0) {
-      this.state = 'previous';
+      this.state = PREVIOUS;
     }
   }
 
@@ -181,12 +186,12 @@ var Group = {
   
   childrenToArray,
   
-  load
+  load: noop
 };
 
 var Slides = {
   init (el=null, options={}) {
-    this.state = 'closed'; // 'open' or 'closed'
+    this.state = CLOSED; // 'open' or 'closed'
     this.children = []; // Group instances
     this.activeIndex = 0;
     this.lastIndex = null;
@@ -228,14 +233,14 @@ var Slides = {
 
     this.update({});
     this.emit('start', this);
-    this.state = 'open';
+    this.state = OPEN;
 
     return this;
   },
 
   stop () {
     this.emit('stop', this);
-    this.state = 'closed';
+    this.state = CLOSED;
 
     return this;
   },
