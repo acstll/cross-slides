@@ -10,9 +10,10 @@ import { EventEmitter } from 'eventemitter3';
   - 'reset' (slides)
   - 'update' (slides, options)
   
+  - 'change' (unit, previousState, options)
+  - 'change `depth`' (unit, previousState, options)
   - 'reset `depth`' (unit)
   - 'update `depth`' (unit, options)
-  - 'change `depth`' (unit, previousState, options)
 */
 
 // States.
@@ -72,6 +73,7 @@ const changeState = function changeState () {
 
   if (previousState !== this.state) {
     this.alter('move', extend({ previousState }, options));
+    this.emit('change', this, previousState, options);
     this.emit(event, this, previousState, options);
   }
 };
@@ -81,7 +83,7 @@ const update = function update (options) {
   let index = this.activeIndex;
   let total = this.children.length;
   let config = this.config;
-  let event = this.depth !== null ? `update ${this.depth}` : 'update';
+  let event = this.depth > -1 ? `update ${this.depth}` : 'update';
 
   this.children.forEach(function (child) {
     changeState.call(child, { index, total, config, options });
