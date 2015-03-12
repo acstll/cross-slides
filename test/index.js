@@ -1,20 +1,20 @@
 var test = require('tape');
+var inspect = require('util').inspect;
 
 var createSlides = require('../');
 var Slides = createSlides.Slides;
-var Group = createSlides.Group;
-var Item = createSlides.Item;
+var Unit = createSlides.Unit;
 var noop = function () {};
 
 
 test('createSlides()', function (t) {
   t.plan(4);
 
-  var options = { slides: { a: 1 }};
+  var options = { a: 1 };
   var slides = createSlides(null, options, noop);
 
-  t.notEqual(options, slides.options, '`options` passed is not mutable');
-  t.equal(slides.options.a, 1, '`options` is correct');
+  t.notEqual(options, slides.config, '`options` passed is not mutable');
+  t.equal(slides.config.a, 1, '`options` is correct');
 
   t.throws(function () {
     return createSlides(null);
@@ -26,9 +26,9 @@ test('createSlides()', function (t) {
 });
 
 test('`state` gets set correctly by changeState()', function (t) {
-  var group = Object.create(Group).init(0, null);
+  var unit = Object.create(Unit).init({ index: 0 });
 
-  group.children = [
+  unit.children = [
     { index: 0, alter: noop, emit: noop },
     { index: 1, alter: noop, emit: noop },
     { index: 2, alter: noop, emit: noop },
@@ -38,40 +38,33 @@ test('`state` gets set correctly by changeState()', function (t) {
     { index: 6, alter: noop, emit: noop }
   ];
 
-  group.activeIndex = 3;
-  group.update();
+  unit.activeIndex = 3;
+  unit.update();
 
-  t.equal(group.children[0].state, 'before');
-  t.equal(group.children[1].state, 'before');
-  t.equal(group.children[2].state, 'previous');
-  t.equal(group.children[3].state, 'current');
-  t.equal(group.children[4].state, 'next');
-  t.equal(group.children[5].state, 'after');
-  t.equal(group.children[6].state, 'after');
+  t.equal(unit.children[0].state, 'before');
+  t.equal(unit.children[1].state, 'before');
+  t.equal(unit.children[2].state, 'previous');
+  t.equal(unit.children[3].state, 'current');
+  t.equal(unit.children[4].state, 'next');
+  t.equal(unit.children[5].state, 'after');
+  t.equal(unit.children[6].state, 'after');
 
-  group.activeIndex = 0;
-  group.update();
+  unit.activeIndex = 0;
+  unit.update();
 
-  t.equal(group.children[0].state, 'current');
-  t.equal(group.children[1].state, 'next');
-  t.equal(group.children[2].state, 'after');
-  t.equal(group.children[6].state, 'after');
+  t.equal(unit.children[0].state, 'current');
+  t.equal(unit.children[1].state, 'next');
+  t.equal(unit.children[2].state, 'after');
+  t.equal(unit.children[6].state, 'after');
 
-  group.activeIndex = 6;
-  group.update();
+  unit.activeIndex = 6;
+  unit.update();
 
-  t.equal(group.children[4].state, 'before');
-  t.equal(group.children[5].state, 'previous');
-  t.equal(group.children[6].state, 'current');
+  t.equal(unit.children[4].state, 'before');
+  t.equal(unit.children[5].state, 'previous');
+  t.equal(unit.children[6].state, 'current');
 
   t.end();
-});
-
-test('passing options.group = false omits Items', function (t) {
-  t.plan(1);
-
-  // TODO
-  t.ok(true, 'nothing tested');
 });
 
 test('EventEmitter', function (t) {
@@ -115,8 +108,8 @@ test('EventEmitter', function (t) {
   slides.emit('test', 1);
 
   // 2 times
-  slides.on('change group', function (group, previousState, options) {
-    t.ok(group, 'group state change triggered');
+  slides.on('change 0', function (unit, options) {
+    t.ok(unit, 'unit state change triggered');
   });
 
   slides.move();

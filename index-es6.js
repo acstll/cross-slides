@@ -10,11 +10,9 @@ import { EventEmitter } from 'eventemitter3';
   - 'reset' (slides)
   - 'update' (slides, options)
   
-  - 'reset group' (group)
-  - 'update group' (group, options)
-  - 'change group' (group, previousState, options)
-  
-  - 'change item' (item, previousState, options)
+  - 'reset `depth`' (unit)
+  - 'update `depth`' (unit, options)
+  - 'change `depth`' (unit, previousState, options)
 */
 
 // States.
@@ -30,25 +28,20 @@ const CLOSED = 'closed';
 const noop = function () {};
 
 
-var childrenToArray = function childrenToArray (el={}) {
+var childrenToArray = function childrenToArray (el={}, depth) {
   return [].slice.call(el.children || [], 0);
 };
 
 var defaults = {
-  slides: {
-    loop: false
-  },
-  group: {
-    loop: false
-  }
+  loop: false
 };
 
-// Sets the own state of `Group` and `Item` to
+// Sets the own state of `Unit` to
 // 'before', 'previous', 'current', 'next' or 'after'.
 const changeState = function changeState () {
-  let { index, total, _options, options } = arguments[0];
+  let { index, total, config, options } = arguments[0];
   let previousState = this.state;
-  let event = `change ${this.type}`;
+  let event = `change ${this.depth}`;
 
   if (this.index === index) {
     this.state = CURRENT;
@@ -66,7 +59,7 @@ const changeState = function changeState () {
   }
 
   // Loop mode corrections.
-  if (_options.loop === true) {
+  if (config.loop === true) {
     // If last item is 'current' and we're first.
     if (this.index === 0 && (index + 1 === total)) {
       this.state = NEXT;
@@ -78,7 +71,7 @@ const changeState = function changeState () {
   }
 
   if (previousState !== this.state) {
-    this.alter('move', extend({ previousState: previousState }, options));
+    this.alter('move', extend({ previousState }, options));
     this.emit(event, this, previousState, options);
   }
 };
@@ -87,11 +80,11 @@ const changeState = function changeState () {
 const update = function update (options) {
   let index = this.activeIndex;
   let total = this.children.length;
-  let _options = this.options || {}; // internal
-  let event = this.type ? `update ${this.type}` : 'update';
+  let config = this.config;
+  let event = this.depth !== null ? `update ${this.depth}` : 'update';
 
   this.children.forEach(function (child) {
-    changeState.call(child, { index, total, _options, options });
+    changeState.call(child, { index, total, config, options });
   });
 
   this.emit(event, this, options);
@@ -107,7 +100,7 @@ const move = function move (steps=1, options={}, callback=noop) {
 
   let newIndex = this.activeIndex + steps;
 
-  if (!this.options.loop) {
+  if (!this.config.loop) {
     if (newIndex > this.lastIndex || newIndex < 0) {
       return false;
     }
@@ -129,32 +122,19 @@ const move = function move (steps=1, options={}, callback=noop) {
 
 
 
-var Item = {
-  init (index, el, emit=noop) {
-    this.index = index;
-    this.el = el;
-    this.state = '';
-    this.emit = emit;
-    this.type = 'item';
-
-    return this;
-  }
-};
-
-var Group = {
-  init (index, el=null, options={}, emit=noop) {
+var Unit = {
+  init (index, el, depth=0, config={}, emit=noop) {
     this.index = index;
     this.state = '';
+    this.depth = depth;
     this.emit = emit;
-    this.type = 'group';
 
     this.children = []; // Item instances
     this.activeIndex = 0;
     this.lastIndex = null;
 
-    this.options = options === false
-      ? options
-      : extend(defaults.group, options);
+    this.config = config[this.depth] || {};
+    this.__config = config;
 
     if (el !== null) {
       this.reset(el);
@@ -166,19 +146,21 @@ var Group = {
   reset (el) {
     let children = this.children = [];
     let emit = this.emit;
+    let depth = this.depth + 1;
+    let config = this.__config;
     this.el = el;
 
-    if (this.options !== false) {
-      this.childrenToArray(this.el).forEach(function (element, index) {
-        let item = Object.create(Item).init(index, element, emit);
-        children.push(item);
-      });
-      this.lastIndex = this.children.length - 1;
+    this.childrenToArray(this.el, this.depth).forEach(function (element, index) {
+      let unit = Object.create(Unit).init(index, element, depth, config, emit);
+      children.push(unit);
+    });
 
-      this.load(this.children);
+    if (this.children.length) {
+      this.lastIndex = this.children.length - 1;
     }
 
-    this.emit('reset group', this);
+    this.load(this.children);
+    this.emit(`reset ${this.depth}`, this);
     this.update();
   },
 
@@ -190,16 +172,15 @@ var Group = {
 };
 
 var Slides = {
-  init (el=null, options={}) {
+  init (el=null, config={}) {
     this.state = CLOSED; // 'open' or 'closed'
-    this.children = []; // Group instances
+    this.children = []; // Unit instances
     this.activeIndex = 0;
     this.lastIndex = null;
 
     assign(this, EventEmitter.prototype);
 
-    this.options = extend(defaults.slides, options.slides || {});
-    this._options = options;
+    this.config = extend(defaults, config || {});
 
     if (el !== null) {
       this.reset(el);
@@ -210,13 +191,13 @@ var Slides = {
 
   reset (el) {
     let children = this.children = [];
-    let options = this._options.group;
+    let config = this.config;
     let emit = this.emit.bind(this);
 
     this.el = el;
-    this.childrenToArray(this.el).forEach(function (element, index) {
-      let group = Object.create(Group).init(index, element, options, emit);
-      children.push(group);
+    this.childrenToArray(this.el, this.depth).forEach(function (element, index) {
+      let unit = Object.create(Unit).init(index, element, 0, config, emit);
+      children.push(unit);
     });
     this.activeIndex = 0;
     this.lastIndex = this.children.length - 1;
@@ -251,9 +232,10 @@ var Slides = {
 
   move,
 
-  moveDeep () {
-    let activeGroup = this.children[this.activeIndex];
-    return move.apply(activeGroup, arguments);
+  moveDeep (steps=1, depth=1, options={}) {
+    // TODO: traverse into depth
+    let activeUnit = this.children[this.activeIndex];
+    return move.apply(activeUnit, [steps, options]);
   },
 
   update,
@@ -273,13 +255,12 @@ const create = function (el, options, alter) {
     throw new Error('An `alter` function as second or third parameter is mandatory.');
   }
 
-  Group.alter = Item.alter = alter;
+  Unit.alter = alter;
   return Object.create(Slides).init(el, options);
 };
 
 create.Slides = Slides;
-create.Group = Group;
-create.Item = Item;
+create.Unit = Unit;
 create.defaults = defaults;
 
 module.exports = create;

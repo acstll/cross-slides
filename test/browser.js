@@ -29,7 +29,7 @@ var alter = function (action, options) {
   }
 };
 
-var slides = createSlides(el, { slides: { loop: true }}, alter);
+var slides = createSlides(el, { loop: true, 0: { loop: true } }, alter);
 
 slides.start();
 
