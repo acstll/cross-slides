@@ -12,13 +12,13 @@ var EventEmitter = require("eventemitter3").EventEmitter;
   Events:
   - 'start' (slides)
   - 'stop' (slides)
-  - 'reset' (slides)
-  - 'update' (slides, options)
-  
+  - 'reset' (slides) [*not* on initial createSlides call]
+  - 'update' (slides, options), (unit, options)
+  - 'update `depth`' (unit, options)
   - 'change' (unit, previousState, options)
   - 'change `depth`' (unit, previousState, options)
-  - 'reset `depth`' (unit)
-  - 'update `depth`' (unit, options)
+  - 'initialize' (unit)
+  - 'initialize `depth`' (unit)
 */
 
 // States.
@@ -80,6 +80,7 @@ var changeState = function changeState() {
 
   if (previousState !== this.state) {
     this.alter("move", extend({ previousState: previousState }, options));
+
     this.emit("change", this, previousState, options);
     this.emit(event, this, previousState, options);
   }
@@ -96,6 +97,7 @@ var update = function update(options) {
     changeState.call(child, { index: index, total: total, config: config, options: options });
   });
 
+  this.emit("update", this, options);
   this.emit(event, this, options);
 };
 
@@ -152,13 +154,13 @@ var Unit = {
     this.__config = config;
 
     if (el !== null) {
-      this.reset(el);
+      this.initialize(el);
     }
 
     return this;
   },
 
-  reset: function reset(el) {
+  initialize: function initialize(el) {
     var children = this.children = [];
     var emit = this.emit;
     var depth = this.depth + 1;
@@ -175,7 +177,13 @@ var Unit = {
     }
 
     this.load(this.children);
-    this.emit("reset " + this.depth, this);
+
+    // Defer so listeners can be attached.
+    setTimeout((function () {
+      this.emit("initialize", this);
+      this.emit("initialize " + this.depth, this);
+    }).bind(this), 0);
+
     this.update();
   },
 

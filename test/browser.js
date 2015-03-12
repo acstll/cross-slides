@@ -31,6 +31,14 @@ var alter = function (action, options) {
 
 var slides = createSlides(el, { loop: true, 0: { loop: true } }, alter);
 
+slides.on('initialize', function (unit) {
+  var depth = unit.depth;
+
+  if (depth > -1) {
+    unit.el.setAttribute('data-depth', depth);
+  }
+});
+
 slides.start();
 
 window._s = slides;
