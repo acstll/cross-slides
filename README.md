@@ -7,7 +7,7 @@ Slideshow utility.
 ### createSlides(el, [options,] alter);
 
 #### #move(steps[, options, callback]);
-#### #moveDeep(steps[, options, callback]);
+#### #moveDeep(steps[, depth, options, callback]);
 #### #start([index])
 #### #stop()
 #### #is(state)

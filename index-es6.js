@@ -242,10 +242,10 @@ var Slides = {
 
   move,
 
-  moveDeep (steps=1, depth=1, options={}) {
+  moveDeep (steps=1, depth=1, options={}, callback=noop) {
     // TODO: traverse into depth
     let activeUnit = this.children[this.activeIndex];
-    return move.apply(activeUnit, [steps, options]);
+    return move.apply(activeUnit, [steps, options, callback]);
   },
 
   update,

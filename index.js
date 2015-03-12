@@ -262,10 +262,11 @@ var Slides = {
     var steps = arguments[0] === undefined ? 1 : arguments[0];
     var depth = arguments[1] === undefined ? 1 : arguments[1];
     var options = arguments[2] === undefined ? {} : arguments[2];
+    var callback = arguments[3] === undefined ? noop : arguments[3];
 
     // TODO: traverse into depth
     var activeUnit = this.children[this.activeIndex];
-    return move.apply(activeUnit, [steps, options]);
+    return move.apply(activeUnit, [steps, options, callback]);
   },
 
   update: update,
