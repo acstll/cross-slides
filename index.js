@@ -176,7 +176,7 @@ var Unit = {
       this.lastIndex = this.children.length - 1;
     }
 
-    this.load(this.children);
+    this.load();
 
     // Defer so listeners can be attached.
     setTimeout((function () {
