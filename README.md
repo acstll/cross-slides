@@ -17,12 +17,13 @@ Slideshow utility.
 
 - `start` (slides)
 - `stop` (slides)
-- `reset` (slides)
-- `update` (slides, options)
-- `reset group` (group)
-- `update group` (group, options)
-- `change group` (group, previousState, options)
-- `change item` (item, previousState, options)
+- `reset` (slides) [*not* on initial createSlides call]
+- `update` (slides, options), (unit, options)
+- `update <depth>` (unit, options)
+- `change` (unit, previousState, options)
+- `change <depth>` (unit, previousState, options)
+- `initialize' (unit)
+- `initialize <depth>` (unit)
 
 ## Examples
 
@@ -35,9 +36,9 @@ Slides.setActiveIndexById = function (id) {
   if (!id) return;
   var self = this;
 
-  this.children.some(function (group) {
-    if (group.id === id) { // check 'reset group' example below
-      self.activeIndex = group.index;
+  this.children.some(function (unit) {
+    if (unit.id === id) { // check 'reset unit' example below
+      self.activeIndex = unit.index;
       return true;
     }
   });
@@ -56,9 +57,9 @@ slides.on('start', function () {
   });
 };
 
-// Add an `id` property to every group instance 
+// Add an `id` property to every unit instance 
 // based on its DOM element `id` attribute
-slides.on('reset group', function (group) {
-  group.id = group.el.getAttribute('id');
+slides.on('initialize', function (unit) {
+  unit.id = unit.el.getAttribute('id');
 });
 ```
