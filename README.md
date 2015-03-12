@@ -17,12 +17,12 @@ Slideshow utility.
 
 - `start` (slides)
 - `stop` (slides)
-- `reset` (slides) [*not* on initial createSlides call]
+- `reset` (slides) [*not* on initial `createSlides` call]
 - `update` (slides, options), (unit, options)
 - `update <depth>` (unit, options)
 - `change` (unit, previousState, options)
 - `change <depth>` (unit, previousState, options)
-- `initialize' (unit)
+- `initialize` (unit)
 - `initialize <depth>` (unit)
 
 ## Examples
@@ -50,10 +50,10 @@ Slides.setActiveIndexById = function (id) {
 ```js
 var slides = createSlides(el);
 
-// Reset all groups to the first position on start.
+// Reset all units to the first position on start.
 slides.on('start', function () {
-  slides.children.forEach(function (group) {
-    group.activeIndex = 0;
+  slides.children.forEach(function (unit) {
+    unit.activeIndex = 0;
   });
 };
 
