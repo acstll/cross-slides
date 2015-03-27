@@ -146,7 +146,7 @@ var Unit = {
     this.depth = depth;
     this.emit = emit;
 
-    this.children = []; // Item instances
+    this.children = []; // Unit instances
     this.activeIndex = 0;
     this.lastIndex = null;
 
@@ -234,13 +234,15 @@ var Slides = {
   },
 
   start: function start(index) {
+    var options = arguments[1] === undefined ? {} : arguments[1];
+
     if (index > -1 && index < this.children.length) {
       this.activeIndex = index;
     }
 
-    this.update({});
-    this.emit("start", this);
     this.state = OPEN;
+    this.emit("start", this);
+    this.update(options);
 
     return this;
   },
