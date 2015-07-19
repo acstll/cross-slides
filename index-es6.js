@@ -1,276 +1,243 @@
 
-import extend from 'xtend';
-import assign from 'xtend/mutable';
-import { EventEmitter } from 'eventemitter3';
+import extend from 'xtend'
+import assign from 'xtend/mutable'
+import EventEmitter from 'eventemitter3'
 
 /*
   Events:
   - 'start' (slides)
   - 'stop' (slides)
-  - 'reset' (slides) [*not* on initial createSlides call]
-  - 'update' (slides, options), (unit, options)
-  - 'update `depth`' (unit, options)
-  - 'change' (unit, previousState, options)
-  - 'change `depth`' (unit, previousState, options)
-  - 'initialize' (unit)
-  - 'initialize `depth`' (unit)
+  - 'reset'
+  - 'run'
+  - 'update' (unit)
+  - 'change' (unit, options)
 */
 
-// States.
-const BEFORE = 'before';
-const PREVIOUS = 'previous';
-const CURRENT = 'current';
-const NEXT = 'next';
-const AFTER = 'after';
+const BEFORE = 'before'
+const PREVIOUS = 'previous'
+const CURRENT = 'current'
+const NEXT = 'next'
+const AFTER = 'after'
 
-const OPEN = 'open';
-const CLOSED = 'closed';
+let defaults = {
+  loop: false,
+  0: {
+    loop: false
+  }
+}
 
-const noop = function () {};
+function getConfig (unit) {
+  return unit.depth === 0 ? unit.config : (unit.config[unit.depth] || {})
+}
 
-
-var childrenToArray = function childrenToArray (el={}, depth) {
-  return [].slice.call(el.children || [], 0);
-};
-
-var defaults = {
-  loop: false
-};
-
-// Sets the own state of `Unit` to
-// 'before', 'previous', 'current', 'next' or 'after'.
-const changeState = function changeState () {
-  let { index, total, config, options } = arguments[0];
-  let previousState = this.state;
-  let event = `change ${this.depth}`;
-
-  if (this.index === index) {
-    this.state = CURRENT;
+function findUnit (unit, depth) {
+  if (unit.depth === depth) {
+    return unit
   }
 
-  if (this.index < index) {
-    this.state = (this.index === index - 1)
+  return findUnit(unit.activeChild, depth)
+}
+
+const noop = function () {}
+
+// Change a unit's state based on new index and total
+function changeState (unit, { index, total }) {
+  const config = getConfig(unit)
+  const previousState = unit.state
+
+  if (unit.index === index) {
+    unit.state = CURRENT
+  }
+
+  if (unit.index < index) {
+    unit.state = (unit.index === index - 1)
       ? PREVIOUS
-      : BEFORE;
+      : BEFORE
   }
-  if (this.index > index) {
-    this.state = (this.index === index + 1)
+  if (unit.index > index) {
+    unit.state = (unit.index === index + 1)
       ? NEXT
-      : AFTER;
+      : AFTER
   }
 
   // Loop mode corrections.
   if (config.loop === true) {
     // If last item is 'current' and we're first.
-    if (this.index === 0 && (index + 1 === total)) {
-      this.state = NEXT;
+    if (unit.index === 0 && (index + 1 === total)) {
+      unit.state = NEXT
     }
     // If first item is 'current' and we're last.
-    if ((this.index + 1 === total) && index === 0) {
-      this.state = PREVIOUS;
+    if ((unit.index + 1 === total) && index === 0) {
+      unit.state = PREVIOUS
     }
   }
 
-  if (previousState !== this.state) {
-    this.alter('move', extend({ previousState }, options));
+  return previousState
+}
 
-    this.emit('change', this, previousState, options);
-    this.emit(event, this, previousState, options);
-  }
-};
+// Move active index by n steps
+function moveIndex (unit, steps=1) {
+  const config = getConfig(unit)
+  let newIndex = unit.activeIndex + steps
 
-// Calls `changeState` on children passing `activeIndex`.
-const update = function update (options) {
-  let index = this.activeIndex;
-  let total = this.children.length;
-  let config = this.config;
-  let event = this.depth > -1 ? `update ${this.depth}` : 'update';
-
-  this.children.forEach(function (child) {
-    changeState.call(child, { index, total, config, options });
-  });
-
-  this.emit('update', this, options);
-  this.emit(event, this, options);
-};
-
-// Typical next/prev function:
-// increases/decreases `activeIndex` and calls `update`.
-const move = function move (steps=1, options={}, callback=noop) {
-  if (arguments.length === 2 && typeof options === 'function') {
-    callback = options;
-    options = {};
-  }
-
-  let newIndex = this.activeIndex + steps;
-
-  if (!this.config.loop) {
-    if (newIndex > this.lastIndex || newIndex < 0) {
-      return false;
+  if (!config.loop) {
+    if (newIndex > unit.lastIndex || newIndex < 0) {
+      return false
     }
   } else {
-    if (newIndex > this.lastIndex) {
-      newIndex = 0;
+    if (newIndex > unit.lastIndex) {
+      newIndex = 0
     }
     if (newIndex < 0) {
-      newIndex = this.lastIndex;
+      newIndex = unit.lastIndex
     }
   }
 
-  this.activeIndex = newIndex;
-  this.update(options);
-  callback(this.children, this.activeIndex);
+  unit.activeIndex = newIndex
 
-  return true;
-};
+  return true
+}
 
+function initialize (unit) {
+  const depth = unit.depth + 1
+  const { config } = unit
 
+  unit.state = null
+  unit.children = []
+  unit.activeIndex = 0
 
-var Unit = {
-  init (index, el, depth=0, config={}, emit=noop) {
-    this.index = index;
-    this.state = '';
-    this.depth = depth;
-    this.emit = emit;
+  unit.childrenToArray(unit.el, unit.depth).forEach(function (el, index) {
+    let child = Object.create(Unit).init({ index, el, depth, config })
+    unit.children.push(child)
+  })
 
-    this.children = []; // Unit instances
-    this.activeIndex = 0;
-    this.lastIndex = null;
+  unit.lastIndex = unit.size ? unit.size - 1 : null
 
-    this.config = config[this.depth] || {};
-    this.__config = config;
+  if (typeof unit.load === 'function') {
+    unit.load()
+  }
 
-    if (el !== null) {
-      this.initialize(el);
-    }
+  return unit
+}
 
-    return this;
+const Unit = {
+  init ({ index, el, depth=0, config }) {
+    const self = this
+
+    self.index = index
+    self.el = el
+    self.depth = depth
+    self.config = config
+
+    return initialize(self)
   },
 
-  initialize (el) {
-    let children = this.children = [];
-    let emit = this.emit;
-    let depth = this.depth + 1;
-    let config = this.__config;
-    this.el = el;
-
-    this.childrenToArray(this.el, this.depth).forEach(function (element, index) {
-      let unit = Object.create(Unit).init(index, element, depth, config, emit);
-      children.push(unit);
-    });
-
-    if (this.children.length) {
-      this.lastIndex = this.children.length - 1;
-    }
-
-    this.load();
-
-    // Defer so listeners can be attached.
-    setTimeout(function () {
-      this.emit('initialize', this);
-      this.emit(`initialize ${this.depth}`, this);
-    }.bind(this), 0);
-    
-    this.update();
+  get activeChild () {
+    const self = this
+    return self.children[self.activeIndex]
   },
 
-  update,
-  
-  childrenToArray,
-  
+  get size () {
+    const self = this
+    return self.children.length
+  },
+
+  childrenToArray (el={}, depth) {
+    return [].slice.call(el.children || [], 0)
+  },
+
   load: noop
-};
+}
 
-var Slides = {
-  init (el=null, config={}) {
-    this.state = CLOSED; // 'open' or 'closed'
-    this.children = []; // Unit instances
-    this.activeIndex = 0;
-    this.lastIndex = null;
+const createSlides = function (el, alter, config={}) {
+  config = extend(defaults, config)
+  const rootUnit = Object.create(Unit).init({ index: null, el, config })
 
-    assign(this, EventEmitter.prototype);
-
-    this.config = extend(defaults, config || {});
-
-    if (el !== null) {
-      this.reset(el);
-    }
-
-    return this;
-  },
-
-  reset (el) {
-    let children = this.children = [];
-    let config = this.config;
-    let emit = this.emit.bind(this);
-
-    this.el = el;
-    this.childrenToArray(this.el, this.depth).forEach(function (element, index) {
-      let unit = Object.create(Unit).init(index, element, 0, config, emit);
-      children.push(unit);
-    });
-    this.activeIndex = 0;
-    this.lastIndex = this.children.length - 1;
-
-    this.emit('reset', this);
-
-    return this;
-  },
-
-  start (index, options={}) {
-    if (index > -1 && index < this.children.length) {
-      this.activeIndex = index;
-    }
-
-    this.state = OPEN;
-    this.emit('start', this);
-    this.update(options);
-
-    return this;
-  },
-
-  stop () {
-    this.emit('stop', this);
-    this.state = CLOSED;
-
-    return this;
-  },
-
-  is (state) {
-    return this.state === state;
-  },
-
-  move,
-
-  moveDeep (steps=1, depth=1, options={}, callback=noop) {
-    // TODO: traverse into depth
-    let activeUnit = this.children[this.activeIndex];
-    return move.apply(activeUnit, [steps, options, callback]);
-  },
-
-  update,
-
-  childrenToArray
-};
-
-
-
-const create = function (el, options, alter) {
-  if (arguments.length === 2 && typeof options === 'function') {
-    alter = options;
-    options = {};
-  }
+  const emitter = new EventEmitter()
+  const emit = emitter.emit.bind(emitter)
 
   if (typeof alter !== 'function') {
-    throw new Error('An `alter` function as second or third parameter is mandatory.');
+    throw new TypeError('An `alter` function as second parameter is mandatory.')
   }
 
-  Unit.alter = alter;
-  return Object.create(Slides).init(el, options);
-};
+  function update (unit, options={}, recurse) {
+    const index = unit.activeIndex
+    const total = unit.size
 
-create.Slides = Slides;
-create.Unit = Unit;
-create.defaults = defaults;
+    emit('update', unit)
 
-module.exports = create;
+    unit.children.forEach(function (child) {
+      let previousState = changeState(child, { index, total })
+      let opts = extend({ previousState, type: 'move' }, options)
+
+      if (previousState !== child.state) {
+        alter(child, opts)
+        emit('change', child, opts)
+      }
+
+      if (recurse !== false) {
+        update(child, options)
+      }
+    })
+  }
+
+  function move (steps=1, depth=0, options, callback=noop) {
+    const unit = findUnit(rootUnit, depth)
+
+    if (!moveIndex(unit, steps) || unit.size === 0) {
+      return false
+    }
+
+    update(unit, options, false)
+    callback(unit)
+
+    return true
+  }
+
+  function run (options) {
+    const self = this
+
+    update(rootUnit, options)
+    emit('run')
+
+    return self
+  }
+
+  function reset (el) {
+    rootUnit.el = el
+    initialize(rootUnit)
+    run()
+    emit('reset')
+  }
+
+  function start (options={}) {
+    const self = this
+
+    rootUnit.state = 'open'
+    emit('start', self)
+    run()
+
+    return self
+  }
+
+  function stop () {
+    const self = this
+
+    rootUnit.state = 'closed'
+    emit('stop', self)
+  }
+
+  return assign(emitter, {
+    move,
+    run,
+    reset,
+    start,
+    stop,
+    is: state => rootUnit.state === state,
+    root: rootUnit
+  })
+}
+
+createSlides.Unit = Unit
+
+module.exports = createSlides

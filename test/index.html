@@ -1,13 +1,30 @@
+<head>
+  <meta charset="utf-8">
+</head>
+
+<style>
+  .depth-1,
+  .depth-2 {
+    padding-left: 2em;
+  }
+</style>
+
 <body>
   <div class="slides">
-    <div class="unit-0">1</div>
-    <div class="unit-0">2
-      <div class="unit-1">2.1</div>
-      <div class="unit-1">2.2</div>
-      <div class="unit-1">2.3</div>
+    <div class="depth-0">1</div>
+    <div class="depth-0">2
+      <div class="depth-1">2.1</div>
+      <div class="depth-1">2.2</div>
+      <div class="depth-1">2.3
+        <div class="depth-2">2.3.1</div>
+        <div class="depth-2">2.3.2</div>
+        <div class="depth-2">2.3.3</div>
+        <div class="depth-2">2.3.4</div>
+        <div class="depth-2">2.3.5</div>
+      </div>
     </div>
-    <div class="unit-0">3</div>
-    <div class="unit-0">4</div>
+    <div class="depth-0">3</div>
+    <div class="depth-0">4</div>
   </div>
 </body>
 
