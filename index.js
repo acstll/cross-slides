@@ -16,8 +16,8 @@ var isArray = _interopRequire(require("isarray"));
   - 'stop' (slides)
   - 'reset'
   - 'run'
-  - 'update' (unit)
-  - 'change' (unit, options)
+  - 'update' (slide)
+  - 'change' (slide, options)
 */
 
 var BEFORE = "before";
@@ -33,8 +33,8 @@ var defaults = {
   }
 };
 
-function getConfig(unit) {
-  return unit.depth === 0 ? unit.config : unit.config[unit.depth] || {};
+function getConfig(slide) {
+  return slide.depth === 0 ? slide.config : slide.config[slide.depth] || {};
 }
 
 function findUnit(_x, _x2) {
@@ -42,14 +42,14 @@ function findUnit(_x, _x2) {
 
   _function: while (_again) {
     _again = false;
-    var unit = _x,
+    var slide = _x,
         depth = _x2;
 
-    if (unit.depth === depth) {
-      return unit;
+    if (slide.depth === depth) {
+      return slide;
     }
 
-    _x = unit.activeChild;
+    _x = slide.activeChild;
     _x2 = depth;
     _again = true;
     continue _function;
@@ -58,34 +58,34 @@ function findUnit(_x, _x2) {
 
 var noop = function noop() {};
 
-// Change a unit's state based on new index and total
-function changeState(unit, _ref) {
+// Change a slide's state based on new index and total
+function changeState(slide, _ref) {
   var index = _ref.index;
   var total = _ref.total;
 
-  var config = getConfig(unit);
-  var previousState = unit.state;
+  var config = getConfig(slide);
+  var previousState = slide.state;
 
-  if (unit.index === index) {
-    unit.state = CURRENT;
+  if (slide.index === index) {
+    slide.state = CURRENT;
   }
 
-  if (unit.index < index) {
-    unit.state = unit.index === index - 1 ? PREVIOUS : BEFORE;
+  if (slide.index < index) {
+    slide.state = slide.index === index - 1 ? PREVIOUS : BEFORE;
   }
-  if (unit.index > index) {
-    unit.state = unit.index === index + 1 ? NEXT : AFTER;
+  if (slide.index > index) {
+    slide.state = slide.index === index + 1 ? NEXT : AFTER;
   }
 
   // Loop mode corrections.
   if (config.loop === true) {
     // If last item is 'current' and we're first.
-    if (unit.index === 0 && index + 1 === total) {
-      unit.state = NEXT;
+    if (slide.index === 0 && index + 1 === total) {
+      slide.state = NEXT;
     }
     // If first item is 'current' and we're last.
-    if (unit.index + 1 === total && index === 0) {
-      unit.state = PREVIOUS;
+    if (slide.index + 1 === total && index === 0) {
+      slide.state = PREVIOUS;
     }
   }
 
@@ -93,53 +93,53 @@ function changeState(unit, _ref) {
 }
 
 // Move active index by n steps
-function moveIndex(unit) {
+function moveIndex(slide) {
   var steps = arguments[1] === undefined ? 1 : arguments[1];
 
-  var config = getConfig(unit);
-  var newIndex = unit.activeIndex + steps;
+  var config = getConfig(slide);
+  var newIndex = slide.activeIndex + steps;
 
   if (!config.loop) {
-    if (newIndex > unit.lastIndex || newIndex < 0) {
+    if (newIndex > slide.lastIndex || newIndex < 0) {
       return false;
     }
   } else {
-    if (newIndex > unit.lastIndex) {
+    if (newIndex > slide.lastIndex) {
       newIndex = 0;
     }
     if (newIndex < 0) {
-      newIndex = unit.lastIndex;
+      newIndex = slide.lastIndex;
     }
   }
 
-  unit.activeIndex = newIndex;
+  slide.activeIndex = newIndex;
 
   return true;
 }
 
-function initialize(unit) {
-  var depth = unit.depth + 1;
-  var config = unit.config;
+function initialize(slide) {
+  var depth = slide.depth + 1;
+  var config = slide.config;
 
-  unit.state = null;
-  unit.children = [];
-  unit.activeIndex = 0;
+  slide.state = null;
+  slide.children = [];
+  slide.activeIndex = 0;
 
-  unit.childrenToArray(unit.el, unit.depth).forEach(function (el, index) {
-    var child = Object.create(Unit).init({ index: index, el: el, depth: depth, config: config });
-    unit.children.push(child);
+  slide.childrenToArray(slide.el, slide.depth).forEach(function (el, index) {
+    var child = Object.create(Slide).init({ index: index, el: el, depth: depth, config: config });
+    slide.children.push(child);
   });
 
-  unit.lastIndex = unit.size ? unit.size - 1 : null;
+  slide.lastIndex = slide.size ? slide.size - 1 : null;
 
-  if (typeof unit.load === "function") {
-    unit.load();
+  if (typeof slide.load === "function") {
+    slide.load();
   }
 
-  return unit;
+  return slide;
 }
 
-var Unit = Object.defineProperties({
+var Slide = Object.defineProperties({
   init: function init(_ref) {
     var index = _ref.index;
     var el = _ref.el;
@@ -187,7 +187,7 @@ var createSlides = function createSlides(el, alter) {
   var config = arguments[2] === undefined ? {} : arguments[2];
 
   config = extend(defaults, config);
-  var rootUnit = Object.create(Unit).init({ index: null, el: el, config: config });
+  var rootUnit = Object.create(Slide).init({ index: null, el: el, config: config });
 
   var emitter = new EventEmitter();
   var emit = emitter.emit.bind(emitter);
@@ -200,15 +200,15 @@ var createSlides = function createSlides(el, alter) {
     throw new TypeError("An `alter` function as second parameter is mandatory.");
   }
 
-  function update(unit, _x2, recurse) {
+  function update(slide, _x2, recurse) {
     var options = arguments[1] === undefined ? {} : arguments[1];
 
-    var index = unit.activeIndex;
-    var total = unit.size;
+    var index = slide.activeIndex;
+    var total = slide.size;
 
-    emit("update", unit);
+    emit("update", slide);
 
-    unit.children.forEach(function (child) {
+    slide.children.forEach(function (child) {
       var previousState = changeState(child, { index: index, total: total });
       var opts = extend({ previousState: previousState, type: "move" }, options);
 
@@ -228,14 +228,14 @@ var createSlides = function createSlides(el, alter) {
     var depth = arguments[1] === undefined ? 0 : arguments[1];
     var callback = arguments[3] === undefined ? noop : arguments[3];
 
-    var unit = findUnit(rootUnit, depth);
+    var slide = findUnit(rootUnit, depth);
 
-    if (!moveIndex(unit, steps) || unit.size === 0) {
+    if (!moveIndex(slide, steps) || slide.size === 0) {
       return false;
     }
 
-    update(unit, options, false);
-    callback(unit);
+    update(slide, options, false);
+    callback(slide);
 
     return true;
   }
@@ -288,7 +288,7 @@ var createSlides = function createSlides(el, alter) {
   });
 };
 
-createSlides.Unit = Unit;
+createSlides.Slide = Slide;
 
 module.exports = createSlides;
 

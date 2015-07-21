@@ -10,8 +10,8 @@ import isArray from 'isarray'
   - 'stop' (slides)
   - 'reset'
   - 'run'
-  - 'update' (unit)
-  - 'change' (unit, options)
+  - 'update' (slide)
+  - 'change' (slide, options)
 */
 
 const BEFORE = 'before'
@@ -27,36 +27,36 @@ let defaults = {
   }
 }
 
-function getConfig (unit) {
-  return unit.depth === 0 ? unit.config : (unit.config[unit.depth] || {})
+function getConfig (slide) {
+  return slide.depth === 0 ? slide.config : (slide.config[slide.depth] || {})
 }
 
-function findUnit (unit, depth) {
-  if (unit.depth === depth) {
-    return unit
+function findUnit (slide, depth) {
+  if (slide.depth === depth) {
+    return slide
   }
 
-  return findUnit(unit.activeChild, depth)
+  return findUnit(slide.activeChild, depth)
 }
 
 const noop = function () {}
 
-// Change a unit's state based on new index and total
-function changeState (unit, { index, total }) {
-  const config = getConfig(unit)
-  const previousState = unit.state
+// Change a slide's state based on new index and total
+function changeState (slide, { index, total }) {
+  const config = getConfig(slide)
+  const previousState = slide.state
 
-  if (unit.index === index) {
-    unit.state = CURRENT
+  if (slide.index === index) {
+    slide.state = CURRENT
   }
 
-  if (unit.index < index) {
-    unit.state = (unit.index === index - 1)
+  if (slide.index < index) {
+    slide.state = (slide.index === index - 1)
       ? PREVIOUS
       : BEFORE
   }
-  if (unit.index > index) {
-    unit.state = (unit.index === index + 1)
+  if (slide.index > index) {
+    slide.state = (slide.index === index + 1)
       ? NEXT
       : AFTER
   }
@@ -64,12 +64,12 @@ function changeState (unit, { index, total }) {
   // Loop mode corrections.
   if (config.loop === true) {
     // If last item is 'current' and we're first.
-    if (unit.index === 0 && (index + 1 === total)) {
-      unit.state = NEXT
+    if (slide.index === 0 && (index + 1 === total)) {
+      slide.state = NEXT
     }
     // If first item is 'current' and we're last.
-    if ((unit.index + 1 === total) && index === 0) {
-      unit.state = PREVIOUS
+    if ((slide.index + 1 === total) && index === 0) {
+      slide.state = PREVIOUS
     }
   }
 
@@ -77,51 +77,51 @@ function changeState (unit, { index, total }) {
 }
 
 // Move active index by n steps
-function moveIndex (unit, steps=1) {
-  const config = getConfig(unit)
-  let newIndex = unit.activeIndex + steps
+function moveIndex (slide, steps=1) {
+  const config = getConfig(slide)
+  let newIndex = slide.activeIndex + steps
 
   if (!config.loop) {
-    if (newIndex > unit.lastIndex || newIndex < 0) {
+    if (newIndex > slide.lastIndex || newIndex < 0) {
       return false
     }
   } else {
-    if (newIndex > unit.lastIndex) {
+    if (newIndex > slide.lastIndex) {
       newIndex = 0
     }
     if (newIndex < 0) {
-      newIndex = unit.lastIndex
+      newIndex = slide.lastIndex
     }
   }
 
-  unit.activeIndex = newIndex
+  slide.activeIndex = newIndex
 
   return true
 }
 
-function initialize (unit) {
-  const depth = unit.depth + 1
-  const { config } = unit
+function initialize (slide) {
+  const depth = slide.depth + 1
+  const { config } = slide
 
-  unit.state = null
-  unit.children = []
-  unit.activeIndex = 0
+  slide.state = null
+  slide.children = []
+  slide.activeIndex = 0
 
-  unit.childrenToArray(unit.el, unit.depth).forEach(function (el, index) {
-    let child = Object.create(Unit).init({ index, el, depth, config })
-    unit.children.push(child)
+  slide.childrenToArray(slide.el, slide.depth).forEach(function (el, index) {
+    let child = Object.create(Slide).init({ index, el, depth, config })
+    slide.children.push(child)
   })
 
-  unit.lastIndex = unit.size ? unit.size - 1 : null
+  slide.lastIndex = slide.size ? slide.size - 1 : null
 
-  if (typeof unit.load === 'function') {
-    unit.load()
+  if (typeof slide.load === 'function') {
+    slide.load()
   }
 
-  return unit
+  return slide
 }
 
-const Unit = {
+const Slide = {
   init ({ index, el, depth=0, config }) {
     const self = this
 
@@ -152,7 +152,7 @@ const Unit = {
 
 const createSlides = function (el, alter, config={}) {
   config = extend(defaults, config)
-  const rootUnit = Object.create(Unit).init({ index: null, el, config })
+  const rootUnit = Object.create(Slide).init({ index: null, el, config })
 
   const emitter = new EventEmitter()
   const emit = emitter.emit.bind(emitter)
@@ -165,13 +165,13 @@ const createSlides = function (el, alter, config={}) {
     throw new TypeError('An `alter` function as second parameter is mandatory.')
   }
 
-  function update (unit, options={}, recurse) {
-    const index = unit.activeIndex
-    const total = unit.size
+  function update (slide, options={}, recurse) {
+    const index = slide.activeIndex
+    const total = slide.size
 
-    emit('update', unit)
+    emit('update', slide)
 
-    unit.children.forEach(function (child) {
+    slide.children.forEach(function (child) {
       let previousState = changeState(child, { index, total })
       let opts = extend({ previousState, type: 'move' }, options)
 
@@ -187,14 +187,14 @@ const createSlides = function (el, alter, config={}) {
   }
 
   function move (steps=1, depth=0, options, callback=noop) {
-    const unit = findUnit(rootUnit, depth)
+    const slide = findUnit(rootUnit, depth)
 
-    if (!moveIndex(unit, steps) || unit.size === 0) {
+    if (!moveIndex(slide, steps) || slide.size === 0) {
       return false
     }
 
-    update(unit, options, false)
-    callback(unit)
+    update(slide, options, false)
+    callback(slide)
 
     return true
   }
@@ -243,6 +243,6 @@ const createSlides = function (el, alter, config={}) {
   })
 }
 
-createSlides.Unit = Unit
+createSlides.Slide = Slide
 
 module.exports = createSlides

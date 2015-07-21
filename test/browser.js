@@ -2,10 +2,10 @@ var createSlides = require('..')
 
 var el = document.querySelector('.slides')
 
-var alter = function (unit, options) {
-  var el = unit.el
+var alter = function (slide, options) {
+  var el = slide.el
 
-  switch (unit.state) {
+  switch (slide.state) {
     case 'current':
       el.style.fontWeight = 'bold'
       el.style.color = 'red'
@@ -23,14 +23,14 @@ var alter = function (unit, options) {
       el.style.color = '#ccc'
   }
 
-  el.classList.add(unit.state)
+  el.classList.add(slide.state)
 
   if (options.previousState) {
     el.classList.remove(options.previousState)
   }
 }
 
-createSlides.Unit.load = function () {
+createSlides.Slide.load = function () {
   var self = this
   var el = self.el
 
@@ -43,9 +43,9 @@ var opts = {
   2: { loop: true }
 }
 
-createSlides.Unit.childrenToArray = function (el, depth) {
+createSlides.Slide.childrenToArray = function (el, depth) {
   var children = [].slice.call(el.children || [], 0)
-  
+
   children.forEach(function (_el) {
     _el.setAttribute('data-depth', depth)
   })
