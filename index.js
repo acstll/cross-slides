@@ -187,7 +187,7 @@ var createSlides = function createSlides(el, alter) {
   var config = arguments[2] === undefined ? {} : arguments[2];
 
   config = extend(defaults, config);
-  var rootUnit = Object.create(Slide).init({ index: null, el: el, config: config });
+  var rootSlide = Object.create(Slide).init({ index: null, el: el, config: config });
 
   var emitter = new EventEmitter();
   var emit = emitter.emit.bind(emitter);
@@ -228,7 +228,7 @@ var createSlides = function createSlides(el, alter) {
     var depth = arguments[1] === undefined ? 0 : arguments[1];
     var callback = arguments[3] === undefined ? noop : arguments[3];
 
-    var slide = findUnit(rootUnit, depth);
+    var slide = findUnit(rootSlide, depth);
 
     if (!moveIndex(slide, steps) || slide.size === 0) {
       return false;
@@ -243,15 +243,15 @@ var createSlides = function createSlides(el, alter) {
   function run(options) {
     var self = this;
 
-    update(rootUnit, options);
+    update(rootSlide, options);
     emit("run");
 
     return self;
   }
 
   function reset(el) {
-    rootUnit.el = el;
-    initialize(rootUnit);
+    rootSlide.el = el;
+    initialize(rootSlide);
     run();
     emit("reset");
   }
@@ -261,7 +261,7 @@ var createSlides = function createSlides(el, alter) {
 
     var self = this;
 
-    rootUnit.state = "open";
+    rootSlide.state = "open";
     emit("start", self);
     run();
 
@@ -271,7 +271,7 @@ var createSlides = function createSlides(el, alter) {
   function stop() {
     var self = this;
 
-    rootUnit.state = "closed";
+    rootSlide.state = "closed";
     emit("stop", self);
   }
 
@@ -282,9 +282,9 @@ var createSlides = function createSlides(el, alter) {
     start: start,
     stop: stop,
     is: function (state) {
-      return rootUnit.state === state;
+      return rootSlide.state === state;
     },
-    root: rootUnit
+    root: rootSlide
   });
 };
 

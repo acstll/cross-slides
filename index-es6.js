@@ -152,7 +152,7 @@ const Slide = {
 
 const createSlides = function (el, alter, config={}) {
   config = extend(defaults, config)
-  const rootUnit = Object.create(Slide).init({ index: null, el, config })
+  const rootSlide = Object.create(Slide).init({ index: null, el, config })
 
   const emitter = new EventEmitter()
   const emit = emitter.emit.bind(emitter)
@@ -187,7 +187,7 @@ const createSlides = function (el, alter, config={}) {
   }
 
   function move (steps=1, depth=0, options, callback=noop) {
-    const slide = findUnit(rootUnit, depth)
+    const slide = findUnit(rootSlide, depth)
 
     if (!moveIndex(slide, steps) || slide.size === 0) {
       return false
@@ -202,15 +202,15 @@ const createSlides = function (el, alter, config={}) {
   function run (options) {
     const self = this
 
-    update(rootUnit, options)
+    update(rootSlide, options)
     emit('run')
 
     return self
   }
 
   function reset (el) {
-    rootUnit.el = el
-    initialize(rootUnit)
+    rootSlide.el = el
+    initialize(rootSlide)
     run()
     emit('reset')
   }
@@ -218,7 +218,7 @@ const createSlides = function (el, alter, config={}) {
   function start (options={}) {
     const self = this
 
-    rootUnit.state = 'open'
+    rootSlide.state = 'open'
     emit('start', self)
     run()
 
@@ -228,7 +228,7 @@ const createSlides = function (el, alter, config={}) {
   function stop () {
     const self = this
 
-    rootUnit.state = 'closed'
+    rootSlide.state = 'closed'
     emit('stop', self)
   }
 
@@ -238,8 +238,8 @@ const createSlides = function (el, alter, config={}) {
     reset,
     start,
     stop,
-    is: state => rootUnit.state === state,
-    root: rootUnit
+    is: state => rootSlide.state === state,
+    root: rootSlide
   })
 }
 
