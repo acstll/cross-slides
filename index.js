@@ -8,6 +8,8 @@ var assign = _interopRequire(require("xtend/mutable"));
 
 var EventEmitter = _interopRequire(require("eventemitter3"));
 
+var isArray = _interopRequire(require("isarray"));
+
 /*
   Events:
   - 'start' (slides)
@@ -56,11 +58,7 @@ function findUnit(_x, _x2) {
 
 var noop = function noop() {};
 
-/**
- * Change a unit's state based on new index and total
- *
- * @return String Previous state
- */
+// Change a unit's state based on new index and total
 function changeState(unit, _ref) {
   var index = _ref.index;
   var total = _ref.total;
@@ -94,11 +92,7 @@ function changeState(unit, _ref) {
   return previousState;
 }
 
-/**
- * Move active index by n steps
- *
- * @return Boolean True if moving was possible
- */
+// Move active index by n steps
 function moveIndex(unit) {
   var steps = arguments[1] === undefined ? 1 : arguments[1];
 
@@ -197,6 +191,10 @@ var createSlides = function createSlides(el, alter) {
 
   var emitter = new EventEmitter();
   var emit = emitter.emit.bind(emitter);
+
+  if (typeof el !== "object" || isArray(el)) {
+    throw new TypeError("The `el` param must be a DOM Node or a plain object.");
+  }
 
   if (typeof alter !== "function") {
     throw new TypeError("An `alter` function as second parameter is mandatory.");

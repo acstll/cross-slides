@@ -2,6 +2,7 @@
 import extend from 'xtend'
 import assign from 'xtend/mutable'
 import EventEmitter from 'eventemitter3'
+import isArray from 'isarray'
 
 /*
   Events:
@@ -155,6 +156,10 @@ const createSlides = function (el, alter, config={}) {
 
   const emitter = new EventEmitter()
   const emit = emitter.emit.bind(emitter)
+
+  if (typeof el !== 'object' || isArray(el)) {
+    throw new TypeError('The `el` param must be a DOM Node or a plain object.')
+  }
 
   if (typeof alter !== 'function') {
     throw new TypeError('An `alter` function as second parameter is mandatory.')
