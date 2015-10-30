@@ -25,6 +25,7 @@ var PREVIOUS = "previous";
 var CURRENT = "current";
 var NEXT = "next";
 var AFTER = "after";
+var OPEN = "open";
 
 var defaults = {
   loop: false,
@@ -37,7 +38,7 @@ function getConfig(slide) {
   return slide.depth === 0 ? slide.config : slide.config[slide.depth] || {};
 }
 
-function findUnit(_x, _x2) {
+function findSlide(_x, _x2) {
   var _again = true;
 
   _function: while (_again) {
@@ -228,12 +229,29 @@ var createSlides = function createSlides(el, alter) {
     var depth = arguments[1] === undefined ? 0 : arguments[1];
     var callback = arguments[3] === undefined ? noop : arguments[3];
 
-    var slide = findUnit(rootSlide, depth);
+    var slide = findSlide(rootSlide, depth);
 
     if (!moveIndex(slide, steps) || slide.size === 0) {
       return false;
     }
 
+    update(slide, options, false);
+    callback(slide);
+
+    return true;
+  }
+
+  function moveTo(index, _x2, options) {
+    var depth = arguments[1] === undefined ? 0 : arguments[1];
+    var callback = arguments[3] === undefined ? noop : arguments[3];
+
+    var slide = findSlide(rootSlide, depth);
+
+    if (!slide || index >= slide.size) {
+      return false;
+    }
+
+    slide.activeIndex = index;
     update(slide, options, false);
     callback(slide);
 
@@ -261,7 +279,7 @@ var createSlides = function createSlides(el, alter) {
 
     var self = this;
 
-    rootSlide.state = "open";
+    rootSlide.state = OPEN;
     emit("start", self);
     run();
 
@@ -271,20 +289,24 @@ var createSlides = function createSlides(el, alter) {
   function stop() {
     var self = this;
 
-    rootSlide.state = "closed";
+    rootSlide.state = null;
     emit("stop", self);
   }
 
   return assign(emitter, {
     move: move,
+    moveTo: moveTo,
     run: run,
     reset: reset,
     start: start,
     stop: stop,
-    is: function (state) {
-      return rootSlide.state === state;
-    },
-    root: rootSlide
+    root: rootSlide,
+    BEFORE: BEFORE,
+    PREVIOUS: PREVIOUS,
+    CURRENT: CURRENT,
+    NEXT: NEXT,
+    AFTER: AFTER,
+    OPEN: OPEN
   });
 };
 

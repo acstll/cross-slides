@@ -19,6 +19,7 @@ const PREVIOUS = 'previous'
 const CURRENT = 'current'
 const NEXT = 'next'
 const AFTER = 'after'
+const OPEN = 'open'
 
 let defaults = {
   loop: false,
@@ -31,12 +32,12 @@ function getConfig (slide) {
   return slide.depth === 0 ? slide.config : (slide.config[slide.depth] || {})
 }
 
-function findUnit (slide, depth) {
+function findSlide (slide, depth) {
   if (slide.depth === depth) {
     return slide
   }
 
-  return findUnit(slide.activeChild, depth)
+  return findSlide(slide.activeChild, depth)
 }
 
 const noop = function () {}
@@ -187,12 +188,26 @@ const createSlides = function (el, alter, config={}) {
   }
 
   function move (steps=1, depth=0, options, callback=noop) {
-    const slide = findUnit(rootSlide, depth)
+    const slide = findSlide(rootSlide, depth)
 
     if (!moveIndex(slide, steps) || slide.size === 0) {
       return false
     }
 
+    update(slide, options, false)
+    callback(slide)
+
+    return true
+  }
+
+  function moveTo (index, depth=0, options, callback=noop) {
+    const slide = findSlide(rootSlide, depth)
+
+    if (!slide || index >= slide.size) {
+      return false
+    }
+
+    slide.activeIndex = index
     update(slide, options, false)
     callback(slide)
 
@@ -218,7 +233,7 @@ const createSlides = function (el, alter, config={}) {
   function start (options={}) {
     const self = this
 
-    rootSlide.state = 'open'
+    rootSlide.state = OPEN
     emit('start', self)
     run()
 
@@ -228,18 +243,24 @@ const createSlides = function (el, alter, config={}) {
   function stop () {
     const self = this
 
-    rootSlide.state = 'closed'
+    rootSlide.state = null
     emit('stop', self)
   }
 
   return assign(emitter, {
     move,
+    moveTo,
     run,
     reset,
     start,
     stop,
-    is: state => rootSlide.state === state,
-    root: rootSlide
+    root: rootSlide,
+    BEFORE,
+    PREVIOUS,
+    CURRENT,
+    NEXT,
+    AFTER,
+    OPEN
   })
 }
 
